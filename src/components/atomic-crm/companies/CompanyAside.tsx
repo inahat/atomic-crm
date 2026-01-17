@@ -1,5 +1,5 @@
 import { Globe, Linkedin, Phone } from "lucide-react";
-import { useRecordContext } from "ra-core";
+import { usePermissions, useRecordContext, useNotify } from "ra-core";
 import { EditButton } from "@/components/admin/edit-button";
 import { DeleteButton } from "@/components/admin/delete-button";
 import { ReferenceField } from "@/components/admin/reference-field";
@@ -20,15 +20,18 @@ interface CompanyAsideProps {
 
 export const CompanyAside = ({ link = "edit" }: CompanyAsideProps) => {
   const record = useRecordContext<Company>();
+  const { permissions } = usePermissions();
+  const notify = useNotify();
+
   if (!record) return null;
 
   return (
     <div className="hidden sm:block w-[250px] min-w-[250px] space-y-4">
       <div className="flex flex-row space-x-1">
         {link === "edit" ? (
-          <EditButton label="Edit Company" />
+          <EditButton label="Edit Client" />
         ) : (
-          <ShowButton label="Show Company" />
+          <ShowButton label="Show Client" />
         )}
       </div>
 
@@ -40,11 +43,21 @@ export const CompanyAside = ({ link = "edit" }: CompanyAsideProps) => {
 
       <AdditionalInfo record={record} />
 
-      {link !== "edit" && (
+      {link !== "edit" && permissions === 'admin' && (
         <div className="mt-6 pt-6 border-t hidden sm:flex flex-col gap-2 items-start">
           <DeleteButton
             className="h-6 cursor-pointer hover:bg-destructive/10! text-destructive! border-destructive! focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40"
             size="sm"
+            mutationMode="pessimistic"
+            mutationOptions={{
+              onError: (error: any) => {
+                if (error.status === 409 || error.message?.includes("contracts_company_id_fkey")) {
+                  notify("Deleting is not permitted because this client has contracts assigned. Contracts must be deleted first.", { type: "error" });
+                } else {
+                  notify(`Error: ${error.message}`, { type: "error" });
+                }
+              }
+            }}
           />
         </div>
       )}
@@ -58,7 +71,7 @@ const CompanyInfo = ({ record }: { record: Company }) => {
   }
 
   return (
-    <AsideSection title="Company Info">
+    <AsideSection title="Client Info">
       {record.website && (
         <div className="flex flex-row items-center gap-1 min-h-[24px]">
           <Globe className="w-4 h-4" />

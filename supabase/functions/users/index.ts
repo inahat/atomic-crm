@@ -127,6 +127,17 @@ async function patchUser(req: Request, currentUserSale: any) {
     await updateSaleAvatar(data.user.id, avatar);
   }
 
+  // Ensure the sales record is also updated with the new name
+  const { error: salesUpdateError } = await supabaseAdmin
+    .from("sales")
+    .update({ first_name, last_name })
+    .eq("id", sales_id);
+
+  if (salesUpdateError) {
+    console.error("Error updating sales record:", salesUpdateError);
+    return createErrorResponse(500, "Failed to update profile details");
+  }
+
   // Only administrators can update the administrator and disabled status
   if (!currentUserSale.administrator) {
     const { data: new_sale } = await supabaseAdmin
@@ -175,25 +186,39 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  const authHeader = req.headers.get("Authorization")!;
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) {
+    return createErrorResponse(401, "Missing Authorization Header");
+  }
+  const token = authHeader.replace("Bearer ", "");
+
+  const apiKey = Deno.env.get("ANON_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+
+
+
   const localClient = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+    Deno.env.get("SUPABASE_URL") ?? Deno.env.get("API_URL") ?? "",
+    apiKey,
     { global: { headers: { Authorization: authHeader } } },
   );
-  const { data } = await localClient.auth.getUser();
+
+  // Explicitly verify the token
+  const { data, error: authError } = await localClient.auth.getUser(token);
   if (!data?.user) {
-    return createErrorResponse(401, "Unauthorized");
+    return createErrorResponse(401, `Auth User Failed: ${JSON.stringify(authError)}`);
   }
-  const currentUserSale = await supabaseAdmin
+  const { data: saleData, error: saleError } = await supabaseAdmin
     .from("sales")
     .select("*")
     .eq("user_id", data.user.id)
     .single();
 
-  if (!currentUserSale?.data) {
-    return createErrorResponse(401, "Unauthorized");
+  if (!saleData || saleError) {
+    console.error("Sale lookup error:", saleError);
+    return createErrorResponse(401, `Sales Lookup Failed: ${saleError?.message || "No sale record found for user"} (Ref: ${data.user.id})`);
   }
+
+  const currentUserSale = { data: saleData };
   if (req.method === "POST") {
     return inviteUser(req, currentUserSale.data);
   }

@@ -91,6 +91,15 @@ export const authProvider: AuthProvider = {
     const role = sale.administrator ? "admin" : "user";
     return canAccess(role, params);
   },
+  getPermissions: async () => {
+    const isInitialized = await getIsInitialized();
+    if (!isInitialized) return null;
+
+    const sale = await getSaleFromCache();
+    if (sale == null) return null;
+
+    return sale.administrator ? "admin" : "user";
+  },
   getAuthorizationDetails(authorizationId: string) {
     return supabase.auth.oauth.getAuthorizationDetails(authorizationId);
   },

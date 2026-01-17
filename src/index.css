@@ -4,6 +4,39 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --color-bg-main: #09090b;
+  /* Zinc 950 */
+  --color-card-surface: rgba(24, 24, 27, 0.6);
+  /* Zinc 900 with transparency */
+}
+
+/* Apply the dark background to the whole body */
+/* Apply the dark background to the whole body only in dark mode */
+body.dark {
+  background: radial-gradient(circle at top center, #18181b, #09090b);
+  /* Zinc 900 to 950 */
+  @apply text-zinc-100 min-h-screen;
+}
+
+/* Glassmorphism utility */
+.glass {
+  @apply bg-zinc-900/60 backdrop-blur-xl border border-white/10 shadow-2xl;
+}
+
+/* Apply glass effect to React-Admin cards in dark mode */
+/* Merged duplicate rules and fixed syntax */
+.dark .ra-input,
+.dark .MuiPaper-root,
+.dark .RaSidebar-fixed {
+  @apply !bg-zinc-900/50 !backdrop-blur-md !border !border-white/10 !shadow-2xl !rounded-xl;
+}
+
+/* Apply glass effect to Header in dark mode */
+.dark header {
+  @apply !bg-zinc-900/40 !backdrop-blur-md !border-b !border-white/5;
+}
+
+@theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -87,47 +120,39 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
+  --background: oklch(0.1 0.01 240);
+  /* Deep Zinc/Blue tint */
   --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
+  --card: oklch(0.12 0.02 240);
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
+  --popover: oklch(0.12 0.02 240);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
+  --primary: oklch(0.9 0.05 240);
+  /* Bright Blue-White */
+  --primary-foreground: oklch(0.1 0.05 240);
+  --secondary: oklch(0.2 0.02 240);
   --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
+  --muted: oklch(0.2 0.02 240);
+  --muted-foreground: oklch(0.7 0 0);
+  --accent: oklch(0.25 0.03 240);
   --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 15%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
+  --destructive: oklch(0.6 0.2 20);
+  --border: oklch(0.2 0.02 240);
+  --input: oklch(0.2 0.02 240);
+  --ring: oklch(0.8 0.05 240);
+  --chart-1: oklch(0.6 0.15 240);
+  --chart-2: oklch(0.5 0.15 200);
+  --chart-3: oklch(0.4 0.15 180);
+  --chart-4: oklch(0.7 0.15 280);
+  --chart-5: oklch(0.8 0.15 320);
+  --sidebar: oklch(0.1 0.01 240);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-primary: oklch(0.9 0.05 240);
+  --sidebar-primary-foreground: oklch(0.1 0.05 240);
+  --sidebar-accent: oklch(0.2 0.02 240);
   --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-  --avatar-0: oklch(0.35 0.12 240);
-  --avatar-1: oklch(0.38 0.14 340);
-  --avatar-2: oklch(0.35 0.11 180);
-  --avatar-3: oklch(0.38 0.13 40);
-  --avatar-4: oklch(0.36 0.12 300);
-  --avatar-5: oklch(0.35 0.11 150);
-  --avatar-6: oklch(0.37 0.12 200);
-  --avatar-7: oklch(0.38 0.14 10);
-  --avatar-8: oklch(0.4 0.11 80);
-  --avatar-9: oklch(0.36 0.13 270);
+  --sidebar-border: oklch(0.2 0.02 240);
+  --sidebar-ring: oklch(0.8 0.05 240);
 }
 
 a,
@@ -164,6 +189,7 @@ input[type="time"] {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }

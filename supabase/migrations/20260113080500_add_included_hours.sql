@@ -1,0 +1,1 @@
+ALTER TABLE public.contracts ADD COLUMN IF NOT EXISTS included_hours NUMERIC DEFAULT 0;

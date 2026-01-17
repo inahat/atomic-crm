@@ -2,9 +2,8 @@ import { useCreate, useGetIdentity, useNotify } from "ra-core";
 import { AutocompleteInput } from "@/components/admin/autocomplete-input";
 import type { InputProps } from "ra-core";
 
-export const AutocompleteCompanyInput = ({
-  validate,
-}: Pick<InputProps, "validate">) => {
+export const AutocompleteCompanyInput = (props: InputProps) => {
+  const { validate, ...rest } = props;
   const [create] = useCreate();
   const { identity } = useGetIdentity();
   const notify = useNotify();
@@ -38,6 +37,7 @@ export const AutocompleteCompanyInput = ({
       createItemLabel="Create %{item}"
       createLabel="Start typing to create a new company"
       validate={validate}
+      {...rest}
     />
   );
 };

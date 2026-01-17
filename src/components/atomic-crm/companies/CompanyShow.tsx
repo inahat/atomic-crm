@@ -1,4 +1,4 @@
-import { formatDistance } from "date-fns";
+import { format, formatDistance } from "date-fns";
 import { UserPlus } from "lucide-react";
 import {
   RecordContextProvider,
@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ReferenceManyField } from "@/components/admin/reference-many-field";
+import { ReferenceField } from "@/components/admin/reference-field";
 import { SortButton } from "@/components/admin/sort-button";
 
 import { ActivityLog } from "../activity/ActivityLog";
@@ -25,7 +26,7 @@ import { TagsList } from "../contacts/TagsList";
 import { findDealLabel } from "../deals/deal";
 import { Status } from "../misc/Status";
 import { useConfigurationContext } from "../root/ConfigurationContext";
-import type { Company, Contact, Deal } from "../types";
+import type { Company, Contact, Contract, Deal } from "../types";
 import { CompanyAside } from "./CompanyAside";
 import { CompanyAvatar } from "./CompanyAvatar";
 
@@ -80,36 +81,24 @@ const CompanyShowContent = () => {
                       : `${record.nb_deals} deals`}
                   </TabsTrigger>
                 ) : null}
+                <TabsTrigger value="contracts">Contracts</TabsTrigger>
               </TabsList>
               <TabsContent value="activity" className="pt-2">
                 <ActivityLog companyId={record.id} context="company" />
               </TabsContent>
               <TabsContent value="contacts">
-                {record.nb_contacts ? (
-                  <ReferenceManyField
-                    reference="contacts_summary"
-                    target="company_id"
-                    sort={{ field: "last_name", order: "ASC" }}
-                  >
-                    <div className="flex flex-col gap-4">
-                      <div className="flex flex-row justify-end space-x-2 mt-1">
-                        {!!record.nb_contacts && (
-                          <SortButton
-                            fields={["last_name", "first_name", "last_seen"]}
-                          />
-                        )}
-                        <CreateRelatedContactButton />
-                      </div>
-                      <ContactsIterator />
-                    </div>
-                  </ReferenceManyField>
-                ) : (
+                <ReferenceManyField
+                  reference="contact_companies"
+                  target="company_id"
+                  sort={{ field: "created_at", order: "DESC" }}
+                >
                   <div className="flex flex-col gap-4">
                     <div className="flex flex-row justify-end space-x-2 mt-1">
                       <CreateRelatedContactButton />
                     </div>
+                    <ContactsIterator />
                   </div>
-                )}
+                </ReferenceManyField>
               </TabsContent>
               <TabsContent value="deals">
                 {record.nb_deals ? (
@@ -122,65 +111,76 @@ const CompanyShowContent = () => {
                   </ReferenceManyField>
                 ) : null}
               </TabsContent>
+              <TabsContent value="contracts">
+                <ReferenceManyField
+                  reference="contracts"
+                  target="company_id"
+                  sort={{ field: "expiry_date", order: "ASC" }}
+                >
+                  <ContractsIterator />
+                </ReferenceManyField>
+              </TabsContent>
             </Tabs>
           </CardContent>
         </Card>
       </div>
       <CompanyAside />
-    </div>
+    </div >
   );
 };
 
 const ContactsIterator = () => {
-  const location = useLocation();
-  const { data: contacts, error, isPending } = useListContext<Contact>();
+  const { data: contactCompanies, error, isPending } = useListContext();
+  if (isPending || error || !contactCompanies) return null;
 
-  if (isPending || error) return null;
+  if (contactCompanies.length === 0) return <div className="text-sm text-muted-foreground p-4">No associated contacts</div>;
 
-  const now = Date.now();
   return (
-    <div className="pt-0">
-      {contacts.map((contact) => (
-        <RecordContextProvider key={contact.id} value={contact}>
-          <div className="p-0 text-sm">
-            <RouterLink
-              to={`/contacts/${contact.id}/show`}
-              state={{ from: location.pathname }}
-              className="flex items-center justify-between hover:bg-muted py-2 transition-colors"
-            >
-              <div className="mr-4">
-                <Avatar />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="font-medium">
-                  {`${contact.first_name} ${contact.last_name}`}
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  {contact.title}
-                  {contact.nb_tasks
-                    ? ` - ${contact.nb_tasks} task${
-                        contact.nb_tasks > 1 ? "s" : ""
-                      }`
-                    : ""}
-                  &nbsp; &nbsp;
-                  <TagsList />
-                </div>
-              </div>
-              {contact.last_seen && (
-                <div className="text-right">
-                  <div className="text-sm text-muted-foreground">
-                    last activity {formatDistance(contact.last_seen, now)} ago{" "}
-                    <Status status={contact.status} />
-                  </div>
-                </div>
-              )}
-            </RouterLink>
+    <div className="flex flex-col">
+      {contactCompanies.map((link: any) => (
+        <RecordContextProvider key={link.id} value={link}>
+          <div className="p-0 text-sm border-b last:border-0 hover:bg-muted/50 transition-colors">
+            <ReferenceField source="contact_id" reference="contacts" link="show">
+              <ContactItemLink role={link.role} />
+            </ReferenceField>
           </div>
         </RecordContextProvider>
       ))}
     </div>
   );
 };
+
+const ContactItemLink = ({ role }: { role?: string }) => {
+  const contact = useRecordContext<Contact>();
+  if (!contact) return null;
+  const now = Date.now();
+
+  return (
+    <div className="flex items-center justify-between py-3 px-2 w-full">
+      <div className="mr-4">
+        <Avatar />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="font-medium">
+          {`${contact.first_name} ${contact.last_name}`}
+          {role && <span className="ml-2 text-xs font-normal text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">{role}</span>}
+        </div>
+        <div className="text-sm text-muted-foreground flex items-center gap-2 mt-0.5">
+          {contact.title}
+          <TagsList />
+        </div>
+      </div>
+      {contact.last_seen && (
+        <div className="text-right">
+          <div className="text-sm text-muted-foreground">
+            last activity {formatDistance(contact.last_seen, now)} ago{" "}
+            <Status status={contact.status} />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 const CreateRelatedContactButton = () => {
   const company = useRecordContext<Company>();
@@ -235,6 +235,52 @@ const DealsIterator = () => {
             </RouterLink>
           </div>
         ))}
+      </div>
+    </div>
+  );
+};
+
+const ContractsIterator = () => {
+  const { data: contracts, error, isPending } = useListContext<Contract>();
+
+  if (isPending || error || !contracts) return null;
+
+  if (contracts.length === 0) return <div className="p-4 text-sm text-muted-foreground">No contracts found</div>;
+
+  return (
+    <div className="flex flex-col">
+      {contracts.map(contract => (
+        <RouterLink
+          key={contract.id}
+          to={`/contracts/${contract.id}`}
+          className="flex justify-between items-center p-3 hover:bg-muted/50 rounded-md transition-colors"
+        >
+          <div className="flex flex-col gap-0.5">
+            <div className="font-medium text-sm">{contract.contract_name}</div>
+            <div className="text-xs text-muted-foreground">
+              {contract.amount?.toLocaleString('en-GB', { style: 'currency', currency: 'GBP' })}
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="text-sm text-muted-foreground">
+              Expires: {format(new Date(contract.expiry_date), 'PP')}
+            </div>
+            <span className={`px-2 py-1 rounded-full text-xs font-semibold uppercase tracking-wide 
+                ${contract.status === 'Approved' ? 'bg-green-100 text-green-800' : ''}
+                ${contract.status === 'Proposed' ? 'bg-blue-100 text-blue-800' : ''}
+                ${contract.status === 'Rejected' ? 'bg-red-100 text-red-800' : ''}
+                ${contract.status === 'Open' ? 'bg-yellow-100 text-yellow-800' : ''}
+                ${!['Approved', 'Rejected', 'Open', 'Proposed'].includes(contract.status) ? 'bg-gray-100 text-gray-800' : ''}
+            `}>
+              {contract.status}
+            </span>
+          </div>
+        </RouterLink>
+      ))}
+      <div className="mt-4">
+        <Button variant="outline" size="sm" asChild>
+          <RouterLink to="/contracts/create">Add Contract</RouterLink>
+        </Button>
       </div>
     </div>
   );

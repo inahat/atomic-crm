@@ -57,6 +57,49 @@ const ContactShowContent = () => {
                 </ReferenceField>
               </div>
             </div>
+
+
+            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <div className="text-sm font-medium text-muted-foreground">Email</div>
+                  <TextField source="email" empty="-" />
+                </div>
+                <div className="flex gap-4">
+                  <div className="flex-1">
+                    <div className="text-sm font-medium text-muted-foreground">Work Phone</div>
+                    <TextField source="phone_1_number" empty="-" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-medium text-muted-foreground">Mobile</div>
+                    <TextField source="phone_2_number" empty="-" />
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-muted-foreground">Address</div>
+                  <div className="flex flex-col">
+                    <TextField source="address_line_1" />
+                    <div className="flex gap-1">
+                      <TextField source="city" />
+                      <TextField source="postcode" />
+                    </div>
+                    <TextField source="country" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <div className="text-sm font-medium text-muted-foreground">Owner / Department</div>
+                  <TextField source="owner_company" empty="-" />
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-muted-foreground">Bio / Background</div>
+                  <TextField source="background" empty="-" className="whitespace-pre-wrap" />
+                </div>
+              </div>
+            </div>
+
             <ReferenceManyField
               target="contact_id"
               reference="contactNotes"
@@ -71,6 +114,6 @@ const ContactShowContent = () => {
         </Card>
       </div>
       <ContactAside />
-    </div>
+    </div >
   );
 };

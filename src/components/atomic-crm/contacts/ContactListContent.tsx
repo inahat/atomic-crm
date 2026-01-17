@@ -60,6 +60,9 @@ export const ContactListContent = () => {
               <div className="font-medium">
                 {`${contact.first_name} ${contact.last_name ?? ""}`}
               </div>
+              <div className="text-sm text-foreground/80">
+                {contact.email} {contact.phone_2_number && `• ${contact.phone_2_number}`}
+              </div>
               <div className="text-sm text-muted-foreground">
                 {contact.title}
                 {contact.title && contact.company_id != null && " at "}
@@ -73,9 +76,8 @@ export const ContactListContent = () => {
                   </ReferenceField>
                 )}
                 {contact.nb_tasks
-                  ? ` - ${contact.nb_tasks} task${
-                      contact.nb_tasks > 1 ? "s" : ""
-                    }`
+                  ? ` - ${contact.nb_tasks} task${contact.nb_tasks > 1 ? "s" : ""
+                  }`
                   : ""}
                 &nbsp;&nbsp;
                 <TagsList />

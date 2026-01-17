@@ -22,6 +22,10 @@ const Header = () => {
     currentPath = "/companies";
   } else if (matchPath("/deals/*", location.pathname)) {
     currentPath = "/deals";
+  } else if (matchPath("/contracts/*", location.pathname)) {
+    currentPath = "/contracts";
+  } else if (matchPath("/device_events/*", location.pathname)) {
+    currentPath = "/device_events";
   } else {
     currentPath = false;
   }
@@ -60,7 +64,7 @@ const Header = () => {
                   isActive={currentPath === "/contacts"}
                 />
                 <NavigationTab
-                  label="Companies"
+                  label="Clients"
                   to="/companies"
                   isActive={currentPath === "/companies"}
                 />
@@ -68,6 +72,16 @@ const Header = () => {
                   label="Deals"
                   to="/deals"
                   isActive={currentPath === "/deals"}
+                />
+                <NavigationTab
+                  label="Service Contracts"
+                  to="/contracts"
+                  isActive={currentPath === "/contracts"}
+                />
+                <NavigationTab
+                  label="Network"
+                  to="/device_events"
+                  isActive={currentPath === "/device_events"}
                 />
               </nav>
             </div>
@@ -99,11 +113,10 @@ const NavigationTab = ({
 }) => (
   <Link
     to={to}
-    className={`px-6 py-3 text-sm font-medium transition-colors border-b-2 ${
-      isActive
-        ? "text-secondary-foreground border-secondary-foreground"
-        : "text-secondary-foreground/70 border-transparent hover:text-secondary-foreground/80"
-    }`}
+    className={`px-6 py-3 text-sm font-medium transition-colors border-b-2 ${isActive
+      ? "text-secondary-foreground border-secondary-foreground"
+      : "text-secondary-foreground/70 border-transparent hover:text-secondary-foreground/80"
+      }`}
   >
     {label}
   </Link>
@@ -123,12 +136,20 @@ const UsersMenu = () => {
 const ConfigurationMenu = () => {
   const { onClose } = useUserMenu() ?? {};
   return (
-    <DropdownMenuItem asChild onClick={onClose}>
-      <Link to="/settings" className="flex items-center gap-2">
-        <Settings />
-        My info
-      </Link>
-    </DropdownMenuItem>
+    <>
+      <DropdownMenuItem asChild onClick={onClose}>
+        <Link to="/settings" className="flex items-center gap-2">
+          <Settings />
+          My info
+        </Link>
+      </DropdownMenuItem>
+      <DropdownMenuItem asChild onClick={onClose}>
+        <Link to="/organization" className="flex items-center gap-2">
+          <Settings />
+          Organization
+        </Link>
+      </DropdownMenuItem>
+    </>
   );
 };
 export default Header;

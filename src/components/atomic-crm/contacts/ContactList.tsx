@@ -3,6 +3,7 @@ import {
   downloadCSV,
   useGetIdentity,
   useListContext,
+  usePermissions,
   type Exporter,
 } from "ra-core";
 import { BulkActionsToolbar } from "@/components/admin/bulk-actions-toolbar";
@@ -40,6 +41,7 @@ export const ContactList = () => {
 const ContactListLayout = () => {
   const { data, isPending, filterValues } = useListContext();
   const { identity } = useGetIdentity();
+  const { permissions } = usePermissions();
 
   const hasFilters = filterValues && Object.keys(filterValues).length > 0;
 
@@ -55,7 +57,9 @@ const ContactListLayout = () => {
           <ContactListContent />
         </Card>
       </div>
-      <BulkActionsToolbar />
+      {/* 
+      // @ts-ignore */}
+      {permissions === 'admin' && <BulkActionsToolbar />}
     </div>
   );
 };
@@ -79,35 +83,28 @@ const exporter: Exporter<Contact> = async (records, fetchRelatedRecords) => {
   const tags = await fetchRelatedRecords<Tag>(records, "tags", "tags");
 
   const contacts = records.map((contact) => {
-    const exportedContact = {
+    // Extract phones from jsonb
+    const phones = contact.phone_jsonb || [];
+    const businessPhone = phones.find(p => p.type === 'Work')?.number || phones[0]?.number || '';
+    const mobilePhone = phones.find(p => p.type === 'Other' || p.type === 'Home')?.number || '';
+
+    const exportedContact: any = {
       ...contact,
       company:
         contact.company_id != null
           ? companies[contact.company_id].name
           : undefined,
-      sales: `${sales[contact.sales_id].first_name} ${
-        sales[contact.sales_id].last_name
-      }`,
+      sales: `${sales[contact.sales_id].first_name} ${sales[contact.sales_id].last_name
+        }`,
       tags: contact.tags.map((tagId) => tags[tagId].name).join(", "),
-      email_work: contact.email_jsonb?.find((email) => email.type === "Work")
-        ?.email,
-      email_home: contact.email_jsonb?.find((email) => email.type === "Home")
-        ?.email,
-      email_other: contact.email_jsonb?.find((email) => email.type === "Other")
-        ?.email,
-      email_jsonb: JSON.stringify(contact.email_jsonb),
-      email_fts: undefined,
-      phone_work: contact.phone_jsonb?.find((phone) => phone.type === "Work")
-        ?.number,
-      phone_home: contact.phone_jsonb?.find((phone) => phone.type === "Home")
-        ?.number,
-      phone_other: contact.phone_jsonb?.find((phone) => phone.type === "Other")
-        ?.number,
-      phone_jsonb: JSON.stringify(contact.phone_jsonb),
-      phone_fts: undefined,
+      business_phone: businessPhone,
+      mobile_phone: mobilePhone,
     };
-    delete exportedContact.email_fts;
-    delete exportedContact.phone_fts;
+    // Remove internal fields
+    delete exportedContact.email_jsonb;
+    delete exportedContact.phone_jsonb;
+    // FTS fields not in type, removing delete
+    delete exportedContact.avatar;
     return exportedContact;
   });
   return jsonExport(contacts, {}, (_err: any, csv: string) => {

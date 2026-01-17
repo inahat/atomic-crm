@@ -1,15 +1,31 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { EditBase, Form, useEditContext } from "ra-core";
+import { useEditContext } from "ra-core";
 
 import type { Contact } from "../types";
 import { ContactAside } from "./ContactAside";
 import { ContactInputs } from "./ContactInputs";
-import { FormToolbar } from "../layout/FormToolbar";
+
+import { Edit, SimpleForm, SaveButton, CancelButton, FormToolbar } from "@/components/admin";
+
+const ContactFormToolbar = () => (
+  <FormToolbar>
+    <CancelButton />
+    <SaveButton />
+  </FormToolbar>
+);
 
 export const ContactEdit = () => (
-  <EditBase redirect="show">
+  <Edit
+    redirect="show"
+    disableBreadcrumb
+    title="Edit Contact"
+    transform={(data) => {
+      console.log('Submitting contact data:', data);
+      return data;
+    }}
+  >
     <ContactEditContent />
-  </EditBase>
+  </Edit>
 );
 
 const ContactEditContent = () => {
@@ -17,14 +33,16 @@ const ContactEditContent = () => {
   if (isPending || !record) return null;
   return (
     <div className="mt-2 flex gap-8">
-      <Form className="flex flex-1 flex-col gap-4">
+      <SimpleForm
+        className="flex flex-1 flex-col gap-4 max-w-none"
+        toolbar={<ContactFormToolbar />}
+      >
         <Card>
           <CardContent>
             <ContactInputs />
-            <FormToolbar />
           </CardContent>
         </Card>
-      </Form>
+      </SimpleForm>
 
       <ContactAside link="show" />
     </div>

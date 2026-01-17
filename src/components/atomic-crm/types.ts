@@ -138,6 +138,30 @@ export type DealNote = {
   status?: undefined;
 } & Pick<RaRecord, "id">;
 
+export type ContractStatus =
+  | "Proposed"
+  | "OPEN-UNBILLED"
+  | "OPEN-BILLED"
+  | "Approved"
+  | "Rejected"
+  | "VIP";
+
+export type Contract = {
+  company_id: Identifier;
+  contract_name: string;
+  contract_number?: string;
+  expiry_date: string;
+  start_date?: string;
+  status: ContractStatus | string;
+  amount: number;
+  site_address_id?: Identifier;
+  billing_address_id?: Identifier;
+  included_hours?: number;
+  contact_id?: Identifier;
+  payment_frequency?: string;
+  ovrc_url?: string;
+} & Pick<RaRecord, "id">;
+
 export type Tag = {
   name: string;
   color: string;

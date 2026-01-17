@@ -8,14 +8,21 @@ import { ReferenceInput } from "@/components/admin/reference-input";
 import { TextInput } from "@/components/admin/text-input";
 import { RadioButtonGroupInput } from "@/components/admin/radio-button-group-input";
 import { SelectInput } from "@/components/admin/select-input";
-import { ArrayInput } from "@/components/admin/array-input";
+
 import { SimpleFormIterator } from "@/components/admin/simple-form-iterator";
+import { ReferenceManyField } from "@/components/admin/reference-many-field";
+import { ReferenceField } from "@/components/admin/reference-field";
+import { TextField } from "@/components/admin/text-field";
+import { CreateButton } from "@/components/admin/create-button";
+import { DataTable } from "@/components/admin/data-table";
+// Check available imports from admin/index.ts first
+import { useRecordContext } from "ra-core";
 
 import { isLinkedinUrl } from "../misc/isLinkedInUrl";
 import { useConfigurationContext } from "../root/ConfigurationContext";
 import type { Sale } from "../types";
 import { Avatar } from "./Avatar";
-import { AutocompleteCompanyInput } from "../companies/AutocompleteCompanyInput.tsx";
+import { AutocompleteCompanyInput } from "../companies/AutocompleteCompanyInput";
 
 export const ContactInputs = () => {
   const isMobile = useIsMobile();
@@ -68,11 +75,55 @@ const ContactPositionInputs = () => {
       <h6 className="text-lg font-semibold">Position</h6>
       <TextInput source="title" helperText={false} />
       <ReferenceInput source="company_id" reference="companies" perPage={10}>
-        <AutocompleteCompanyInput />
+        <AutocompleteCompanyInput label="Primary Client" />
       </ReferenceInput>
+      <TextInput source="owner_company" label="Owner Company" helperText={false} />
+
+      <Separator className="my-2" />
+
+      <AssociatedClients />
     </div>
   );
 };
+
+const AssociatedClients = () => {
+  const record = useRecordContext();
+  if (!record?.id) return null;
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <h6 className="text-sm font-semibold text-muted-foreground">Associated Clients</h6>
+      </div>
+      <ReferenceManyField
+        reference="contact_companies"
+        target="contact_id"
+        label={false}
+      >
+        <div className="flex flex-col gap-2">
+          <DataTable>
+            <DataTable.Col
+              source="company_id"
+              label="Client"
+              render={(record: any) => (
+                <ReferenceField record={record} source="company_id" reference="companies" link="show">
+                  <TextField source="name" />
+                </ReferenceField>
+              )}
+            />
+            <DataTable.Col source="role" label="Role" />
+          </DataTable>
+          <CreateButton
+            resource="contact_companies"
+            label="Add Client Association"
+            state={{ record: { contact_id: record.id } }}
+          />
+        </div>
+      </ReferenceManyField>
+    </div>
+  );
+};
+
 
 const ContactPersonalInformationInputs = () => {
   const { getValues, setValue } = useFormContext();
@@ -106,63 +157,31 @@ const ContactPersonalInformationInputs = () => {
   return (
     <div className="flex flex-col gap-4">
       <h6 className="text-lg font-semibold">Personal info</h6>
-      <ArrayInput
-        source="email_jsonb"
-        label="Email addresses"
+
+      <TextInput
+        source="email"
+        className="w-full"
         helperText={false}
-      >
-        <SimpleFormIterator
-          inline
-          disableReordering
-          disableClear
-          className="[&>ul>li]:border-b-0 [&>ul>li]:pb-0"
-        >
-          <TextInput
-            source="email"
-            className="w-full"
-            helperText={false}
-            label={false}
-            placeholder="Email"
-            validate={email()}
-            onPaste={handleEmailPaste}
-            onBlur={handleEmailBlur}
-          />
-          <SelectInput
-            source="type"
-            helperText={false}
-            label={false}
-            optionText="id"
-            choices={personalInfoTypes}
-            defaultValue="Work"
-            className="w-24 min-w-24"
-          />
-        </SimpleFormIterator>
-      </ArrayInput>
-      <ArrayInput source="phone_jsonb" label="Phone numbers" helperText={false}>
-        <SimpleFormIterator
-          inline
-          disableReordering
-          disableClear
-          className="[&>ul>li]:border-b-0 [&>ul>li]:pb-0"
-        >
-          <TextInput
-            source="number"
-            className="w-full"
-            helperText={false}
-            label={false}
-            placeholder="Phone number"
-          />
-          <SelectInput
-            source="type"
-            helperText={false}
-            label={false}
-            optionText="id"
-            choices={personalInfoTypes}
-            defaultValue="Work"
-            className="w-24 min-w-24"
-          />
-        </SimpleFormIterator>
-      </ArrayInput>
+        validate={email()}
+        onPaste={handleEmailPaste}
+        onBlur={handleEmailBlur}
+      />
+
+      <div className="flex gap-4">
+        <TextInput
+          source="phone_1_number"
+          label="Work Phone"
+          className="flex-1"
+          helperText={false}
+        />
+        <TextInput
+          source="phone_2_number"
+          label="Mobile Phone"
+          className="flex-1"
+          helperText={false}
+        />
+      </div>
+
       <TextInput
         source="linkedin_url"
         label="Linkedin URL"
@@ -173,7 +192,7 @@ const ContactPersonalInformationInputs = () => {
   );
 };
 
-const personalInfoTypes = [{ id: "Work" }, { id: "Home" }, { id: "Other" }];
+
 
 const ContactMiscInputs = () => {
   return (
@@ -185,6 +204,15 @@ const ContactMiscInputs = () => {
         multiline
         helperText={false}
       />
+      <div className="flex flex-col gap-2">
+        <h6 className="text-lg font-semibold">Address</h6>
+        <TextInput source="address_line_1" label="Street Address" helperText={false} />
+        <div className="flex gap-4">
+          <TextInput source="city" className="flex-1" helperText={false} />
+          <TextInput source="postcode" className="flex-1" helperText={false} />
+        </div>
+        <TextInput source="country" helperText={false} />
+      </div>
       <BooleanInput source="has_newsletter" helperText={false} />
       <ReferenceInput
         reference="sales"

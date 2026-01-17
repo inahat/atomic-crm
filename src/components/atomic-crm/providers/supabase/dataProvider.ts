@@ -88,6 +88,9 @@ const dataProviderWithCustomMethods = {
     if (resource === "contacts") {
       return baseDataProvider.getList("contacts_summary", params);
     }
+    if (resource === "contracts") {
+      return baseDataProvider.getList("contracts_summary", params);
+    }
 
     return baseDataProvider.getList(resource, params);
   },
@@ -98,9 +101,13 @@ const dataProviderWithCustomMethods = {
     if (resource === "contacts") {
       return baseDataProvider.getOne("contacts_summary", params);
     }
+    // For contracts, read from the base table to ensure all fields are loaded
+    // The view is only used for getList where we need company_name for filtering
 
     return baseDataProvider.getOne(resource, params);
   },
+
+
 
   async signUp({ email, password, first_name, last_name }: SignUpData) {
     const response = await supabase.auth.signUp({
@@ -164,9 +171,24 @@ const dataProviderWithCustomMethods = {
       },
     );
 
+
+
     if (!sale || error) {
-      console.error("salesCreate.error", error);
-      throw new Error("Failed to update account manager");
+      if (error?.context && typeof error.context.json === 'function') {
+        try {
+          const errorBody = await error.context.json();
+          console.error("SalesUpdate Edge Function Error Body:", errorBody);
+        } catch (e) {
+          console.error("Could not parse Edge Function error JSON", e);
+        }
+      }
+
+      console.error("salesUpdate error details:", {
+        message: error?.message,
+        context: error?.context,
+        fullError: error
+      });
+      throw new Error(`Failed to update account manager: ${error?.message || "Unknown error"}`);
     }
 
     return data;
@@ -284,7 +306,8 @@ export const dataProvider = withLifecycleCallbacks(
           "company_name",
           "title",
           "email",
-          "phone",
+          "phone_1_number",
+          "phone_2_number",
           "background",
         ])(params);
       },
@@ -325,11 +348,40 @@ export const dataProvider = withLifecycleCallbacks(
     {
       resource: "deals",
       beforeGetList: async (params) => {
-        return applyFullTextSearch(["name", "type", "description"])(params);
+        return applyFullTextSearch(["name", "description"])(params);
+      },
+    },
+    {
+      resource: "contracts",
+      beforeGetList: async (params) => {
+        const paramsWithSearch = applyFullTextSearch([
+          "contract_name", "contract_number", "company_name"
+        ])(params);
+
+        const paramsWithDate = applyDateFilters(paramsWithSearch);
+        return applyArrayFilters(paramsWithDate);
+      },
+      beforeUpdate: async (params) => {
+        return params;
+      },
+      beforeCreate: async (params) => {
+        return params;
+      },
+    },
+    {
+      resource: "contracts_summary",
+      beforeGetList: async (params) => {
+        const paramsWithSearch = applyFullTextSearch([
+          "contract_name", "contract_number", "company_name"
+        ])(params);
+
+        const paramsWithDate = applyDateFilters(paramsWithSearch);
+        return applyArrayFilters(paramsWithDate);
       },
     },
   ],
 );
+
 
 const applyFullTextSearch = (columns: string[]) => (params: GetListParams) => {
   if (!params.filter?.q) {
@@ -341,24 +393,48 @@ const applyFullTextSearch = (columns: string[]) => (params: GetListParams) => {
     filter: {
       ...filter,
       "@or": columns.reduce((acc, column) => {
-        if (column === "email")
-          return {
-            ...acc,
-            [`email_fts@ilike`]: q,
-          };
-        if (column === "phone")
-          return {
-            ...acc,
-            [`phone_fts@ilike`]: q,
-          };
-        else
-          return {
-            ...acc,
-            [`${column}@ilike`]: q,
-          };
+        return {
+          ...acc,
+          [`${column}@ilike`]: q,
+        };
       }, {}),
     },
   };
+};
+
+const applyDateFilters = (params: GetListParams) => {
+  if (!params.filter) return params;
+
+  const newFilter = { ...params.filter };
+  Object.keys(newFilter).forEach((key) => {
+    if (key.endsWith("_lte")) {
+      const field = key.replace("_lte", "");
+      newFilter[`${field}@lte`] = newFilter[key];
+      delete newFilter[key];
+    }
+    if (key.endsWith("_gte")) {
+      const field = key.replace("_gte", "");
+      newFilter[`${field}@gte`] = newFilter[key];
+      delete newFilter[key];
+    }
+  });
+  return { ...params, filter: newFilter };
+};
+
+const applyArrayFilters = (params: GetListParams) => {
+  if (!params.filter) return params;
+
+  const newFilter = { ...params.filter };
+  Object.keys(newFilter).forEach((key) => {
+    if (Array.isArray(newFilter[key])) {
+      const values = newFilter[key];
+      if (values.length > 0) {
+        newFilter[`${key}@in`] = `(${values.join(",")})`;
+      }
+      delete newFilter[key];
+    }
+  });
+  return { ...params, filter: newFilter };
 };
 
 const uploadToBucket = async (fi: RAFile) => {

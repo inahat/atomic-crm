@@ -1,5 +1,5 @@
 import { Linkedin, Mail, Phone } from "lucide-react";
-import { useRecordContext, WithRecord } from "ra-core";
+import { usePermissions, useRecordContext, WithRecord } from "ra-core";
 import type { ReactNode } from "react";
 import { ArrayField } from "@/components/admin/array-field";
 import { EditButton } from "@/components/admin/edit-button";
@@ -24,6 +24,7 @@ import { ExportVCardButton } from "./ExportVCardButton";
 
 export const ContactAside = ({ link = "edit" }: { link?: "edit" | "show" }) => {
   const { contactGender } = useConfigurationContext();
+  const { permissions } = usePermissions();
   const record = useRecordContext<Contact>();
 
   if (!record) return null;
@@ -148,12 +149,14 @@ export const ContactAside = ({ link = "edit" }: { link?: "edit" | "show" }) => {
             <ExportVCardButton />
             <ContactMergeButton />
           </div>
-          <div className="mt-6 pt-6 border-t hidden sm:flex flex-col gap-2 items-start">
-            <DeleteButton
-              className="h-6 cursor-pointer hover:bg-destructive/10! text-destructive! border-destructive! focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40"
-              size="sm"
-            />
-          </div>
+          {permissions === 'admin' && (
+            <div className="mt-6 pt-6 border-t hidden sm:flex flex-col gap-2 items-start">
+              <DeleteButton
+                className="h-6 cursor-pointer hover:bg-destructive/10! text-destructive! border-destructive! focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40"
+                size="sm"
+              />
+            </div>
+          )}
         </>
       )}
     </div>

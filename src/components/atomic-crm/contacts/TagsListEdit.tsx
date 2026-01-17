@@ -39,13 +39,15 @@ export const TagsListEdit = () => {
   const [update] = useUpdate<Contact>();
 
   const unselectedTags =
-    allTags && record && allTags.filter((tag) => !record.tags.includes(tag.id));
+    allTags && record && record.tags
+      ? allTags.filter((tag) => !record.tags.includes(tag.id))
+      : allTags || [];
 
   const handleTagAdd = (id: Identifier) => {
     if (!record) {
       throw new Error("No contact record found");
     }
-    const tags = [...record.tags, id];
+    const tags = [...(record.tags || []), id];
     update("contacts", {
       id: record.id,
       data: { tags },
@@ -57,7 +59,7 @@ export const TagsListEdit = () => {
     if (!record) {
       throw new Error("No contact record found");
     }
-    const tags = record.tags.filter((tagId) => tagId !== id);
+    const tags = (record.tags || []).filter((tagId) => tagId !== id);
     await update("contacts", {
       id: record.id,
       data: { tags },
@@ -83,7 +85,7 @@ export const TagsListEdit = () => {
         "contacts",
         {
           id: record.id,
-          data: { tags: [...record.tags, tag.id] },
+          data: { tags: [...(record.tags || []), tag.id] },
           previousData: record,
         },
         {

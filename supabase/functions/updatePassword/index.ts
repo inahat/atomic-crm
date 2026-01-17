@@ -31,9 +31,11 @@ Deno.serve(async (req: Request) => {
   }
 
   const authHeader = req.headers.get("Authorization")!;
+  const apiKey = Deno.env.get("ANON_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+
   const localClient = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+    Deno.env.get("SUPABASE_URL") ?? Deno.env.get("API_URL") ?? "",
+    apiKey,
     { global: { headers: { Authorization: authHeader } } },
   );
 

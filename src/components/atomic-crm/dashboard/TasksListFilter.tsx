@@ -28,7 +28,7 @@ export const TasksListFilter = ({
       sort: { field: "due_date", order: "ASC" },
       filter: {
         ...filter,
-        sales_id: identity?.id,
+        // sales_id: identity?.id, // Column does not exist in production DB yet
       },
     },
     { enabled: !!identity },

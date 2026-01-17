@@ -1,6 +1,8 @@
 import { useGetList } from "ra-core";
 
-import type { Contact, ContactNote } from "../types";
+import { Contact, ContactNote } from "../types";
+import { AIChat } from "@/components/AIChat";
+import { ContractExpiringSoon } from "../contracts/ContractExpiringSoon";
 import { DashboardActivityLog } from "./DashboardActivityLog";
 import { DashboardStepper } from "./DashboardStepper";
 import { DealsChart } from "./DealsChart";
@@ -54,12 +56,15 @@ export const Dashboard = () => {
       <div className="md:col-span-6">
         <div className="flex flex-col gap-6">
           {totalDeal ? <DealsChart /> : null}
-          <DashboardActivityLog />
+          <AIChat className="h-[600px]" />
         </div>
       </div>
 
       <div className="md:col-span-3">
         <TasksList />
+        <div className="mt-6">
+          <ContractExpiringSoon />
+        </div>
       </div>
     </div>
   );

@@ -1,4 +1,12 @@
 import { required, useRecordContext } from "ra-core";
+import {
+  ReferenceManyField,
+  DataTable,
+  TextField,
+  BooleanField,
+  EditButton,
+  CreateButton
+} from "@/components/admin";
 import { ReferenceInput } from "@/components/admin/reference-input";
 import { TextInput } from "@/components/admin/text-input";
 import { SelectInput } from "@/components/admin/select-input";
@@ -62,7 +70,7 @@ const CompanyDisplayInputs = () => {
         className="w-full h-fit"
         validate={required()}
         helperText={false}
-        placeholder="Company name"
+        placeholder="Client name"
       />
     </div>
   );
@@ -104,14 +112,56 @@ const CompanyContextInputs = () => {
 };
 
 const CompanyAddressInputs = () => {
+  const record = useRecordContext();
+  const isExisting = record && record.id;
+
+  if (!isExisting) {
+    return (
+      <div className="flex flex-col gap-4">
+        <h6 className="text-lg font-semibold">Primary Address</h6>
+        <TextInput source="address" label="Address Line 1" helperText={false} />
+        <div className="flex gap-4">
+          <TextInput source="city" className="flex-1" helperText={false} />
+          <TextInput source="zipcode" label="Postcode" className="flex-1" helperText={false} />
+        </div>
+        <div className="flex gap-4">
+          <TextInput source="stateAbbr" label="State/Region" className="flex-1" helperText={false} />
+          <TextInput source="country" className="flex-1" helperText={false} />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-4">
-      <h6 className="text-lg font-semibold">Address</h6>
-      <TextInput source="address" helperText={false} />
-      <TextInput source="city" helperText={false} />
-      <TextInput source="zipcode" helperText={false} />
-      <TextInput source="stateAbbr" helperText={false} />
-      <TextInput source="country" helperText={false} />
+      <div className="flex items-center justify-between">
+        <h6 className="text-lg font-semibold">Addresses</h6>
+        {/* We'll add a create button here later or relying on the list actions */}
+      </div>
+
+      <ReferenceManyField
+        reference="company_addresses"
+        target="company_id"
+        label={false}
+      >
+        <DataTable>
+          <DataTable.Col source="address_type" label="Type" />
+          <DataTable.Col source="address_line_1" label="Address" />
+          <DataTable.Col source="city" label="City" />
+          <DataTable.Col source="postal_code" label="Postcode" />
+          <DataTable.Col source="is_primary" label="Primary">
+            <BooleanField source="is_primary" />
+          </DataTable.Col>
+          <DataTable.Col label="Actions">
+            <EditButton />
+          </DataTable.Col>
+        </DataTable>
+      </ReferenceManyField>
+      <CreateButton
+        resource="company_addresses"
+        label="Add Address"
+        state={{ record: { company_id: record.id, address_type: 'Site' } }}
+      />
     </div>
   );
 };

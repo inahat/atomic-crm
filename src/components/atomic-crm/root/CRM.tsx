@@ -7,13 +7,23 @@ import {
 } from "ra-core";
 import { useEffect } from "react";
 import { Route } from "react-router";
-import { Admin } from "@/components/admin/admin";
+import { AIChatWidget } from "@/components/AIChatWidget";
+import {
+  Admin,
+  ListGuesser,
+} from "@/components/admin";
 import { ForgotPasswordPage } from "@/components/supabase/forgot-password-page";
 import { SetPasswordPage } from "@/components/supabase/set-password-page";
 import { OAuthConsentPage } from "@/components/supabase/oauth-consent-page";
+import { CompanyAddressCreate, CompanyAddressEdit } from "../companies/CompanyAddress";
+import { ContactCompanyCreate } from "../contact_companies/ContactCompanyCreate";
+import { NetworkDashboard } from "../network/NetworkDashboard";
+import { ContractBuilder } from "../contracts/ContractBuilder";
+import { OrganizationSettings } from "../settings/OrganizationSettings";
 
 import companies from "../companies";
 import contacts from "../contacts";
+import contracts from "../contracts";
 import { Dashboard } from "../dashboard/Dashboard";
 import deals from "../deals";
 import { Layout } from "../layout/Layout";
@@ -154,16 +164,37 @@ export const CRM = ({
 
         <CustomRoutes>
           <Route path={SettingsPage.path} element={<SettingsPage />} />
+          <Route path="/contracts/:id/builder" element={<ContractBuilder />} />
         </CustomRoutes>
         <Resource name="deals" {...deals} />
         <Resource name="contacts" {...contacts} />
-        <Resource name="companies" {...companies} />
+        <Resource
+          name="company_addresses"
+          list={ListGuesser}
+          edit={CompanyAddressEdit}
+          create={CompanyAddressCreate}
+        />
+        <Resource name="companies" {...companies} options={{ label: "Clients" }} />
+        <Resource name="contracts" {...contracts} />
+
+        <Resource name="contract_snippets" {...contracts.snippets} options={{ label: "Contract Atoms" }} />
+        <Resource name="crm_settings" />
+        <CustomRoutes>
+          <Route path="/organization" element={<OrganizationSettings />} />
+        </CustomRoutes>
         <Resource name="contactNotes" />
         <Resource name="dealNotes" />
         <Resource name="tasks" />
         <Resource name="sales" {...sales} />
+        <Resource name="contact_companies" create={ContactCompanyCreate} />
+        <Resource
+          name="device_events"
+          list={NetworkDashboard}
+          options={{ label: "Network Command Center" }}
+        />
         <Resource name="tags" />
       </Admin>
+      <AIChatWidget />
     </ConfigurationProvider>
   );
 };

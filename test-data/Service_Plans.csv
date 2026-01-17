@@ -1,0 +1,73 @@
+Expired,Client,Status,Start,End,Annual Price (GBP),Annual Price With Tax (GBP),Allowable Hours,Site Street,Plan Length (Months),Renewal Contact,Renewal Email,Renewal Phone,Number
+False,Rendall and Rittner,Open,2026-01-01,2026-12-31,2990.0,3588.0,5,The Atlas Building,12,Omar Dahab,omar@atlasresidence.co.uk,07951 246 848,CIT-018
+True,HPGS EW Opco Ltd,Open,2025-01-01,2025-12-31,4025.0,4830.0,10,Equipment Works,12,,equipmentworks@ilivearound.com,,GRE-021
+True,Philip Sutterby,Open,2025-01-01,2025-12-31,2875.0,3450.0,5,Aurora,12,,,,PHI-062
+False,MASH Holdings,Approved,2025-12-01,2026-11-30,6630.0,7956.0,8,14 Chelsea Square,12,,,,MAS-046
+False,Amir Janmohamed,Approved,2025-11-01,2026-10-31,3600.0,4320.0,8,2 Ashneal Gardens,12,Neil Quantrill,Neil.Quantrill@demipower.com,+44 (0)7951 440 108,AMI-055
+False,MASH Holdings,Approved,2025-11-01,2026-10-31,2875.0,3450.0,5,10 Timber Street,12,,,,MAS-061
+False,Victoria Berezhnaya,Approved,2025-11-01,2026-10-31,2875.0,3450.0,5,22 Eaton Place,12,Victoria Berezhnaya,5080611@mail.ru,07738 660 898,VIC-013
+False,Ashwin Muthiah,Approved,2025-12-01,2026-11-30,1725.0,2070.0,5,"Apartment 5, 20 Eaton Place",12,Miguel Una,miguel.una@amukholdings.co.uk,07428 109 109,ASH-014
+False,John Symonds,Open,2025-12-01,2026-11-30,2875.0,3450.0,5,"Unit 2, Kingwood",12,Stuart Anning,stuart@serviseglobal.com,+33 6 75 97 12 46,JOH-016
+False,John Symonds,Open,2025-12-01,2026-11-30,2875.0,3450.0,5,"25-26 Eaton Mews South, ",12,Stuart Anning,stuart@serviseglobal.com,+33 6 75 97 12 46,JOH-017
+False,John Symonds,Open,2025-12-01,2026-11-30,1725.0,2070.0,5,"Unit 9, Kingwood",12,Stuart Anning,stuart@serviseglobal.com,+33 6 75 97 12 46,JOH-015
+False,Sanjay Vadera,Open,2025-12-01,2026-11-30,2875.0,3450.0,5,Apt 6.03,12,Beth Jones,beth.jones@tfs.com,,SAN-053
+False,VERTUS J1-J3 LIMITED,Approved,2025-12-01,2026-11-30,1800.0,2160.0,4,VERTUS J1-J3 LIMITED,12,Helen Marchant,Helen@ThisIsVertus.com,,VER-074
+False,Cilantro FM,Approved,2025-10-24,2026-10-23,2875.0,3450.0,5,Good Luck Hope,12,Fionn Cronin,fionn.cronin@cilantrofm.co.uk,+353 86 412 94 94,CIL-059
+False,Mokhzani Mahathir,Approved,2025-11-01,2026-10-31,5750.0,6900.0,10,50 Yeomans Row,12,Mokhzani Mahathir,mokhzani@kencana.com.my,-,MOK-010
+False,Ramsbury Estate,Rejected,2025-03-01,2026-02-28,5350.0,6420.0,8,Park House,12,,,,RAM-058
+False,Alex Claringbull,Approved,2025-11-01,2026-10-31,1725.0,2070.0,5,14 Alderton Hill,12,Alex Claringbull,Alex.Claringbull@blackrock.com,07881 846 761,ALE-009
+False,Bold & Reeves,Approved,2025-10-01,2026-09-30,3250.0,3900.0,4,Apt 5,12,,,,BOL-077
+False,Bayswater Road (Holdings) Ltd,Approved,2025-10-01,2026-09-30,19750.0,23700.0,18,Park Modern,12,,,,RHO-043
+False,Arif Efendi,Open,2025-10-01,2026-09-30,3750.0,4500.0,5,28 Carlyle Square,12,,,,ARI-051
+False,Allsop - The Lark,Open,2025-10-01,2026-09-30,3500.0,4200.0,8,The Lark,12,,,,ALL-076
+False,Ramsbury Estate,Approved,2025-10-01,2026-09-30,48410.0,58092.0,24,Park House,12,,,,RAM-057
+False,The A01 Building Limited,Open,2025-09-01,2026-08-31,5750.0,6900.0,8,A01 Marketing Suite,12,,,,THE-073
+True,Ian Grabiner,Open,2024-08-01,2025-07-31,2875.0,3450.0,5,41 Queens Grove,12,Ian Grabiner,Ian@iangrabiner.co.uk,07831 421 357,IAN-003
+False,Bold & Reeves,Approved,2025-09-01,2026-08-31,3250.0,3900.0,4,Apt 5,12,,,,BOL-075
+False,Olivia Pearce,Rejected,2025-08-01,2026-07-31,2000.0,2400.0,6,2 Macaulay Road,12,,,,OLI-068
+False,Daniel Dines,Rejected,2025-08-01,2026-07-31,4145.0,4974.0,8,Flat 10.02,12,Dror Keren,drork@quantum-pacific.com,07823 352 487,DAN-069
+False,Project Phoenix,Rejected,2025-10-01,2026-09-30,16000.0,19200.0,16,6-7 Grosvenor Place,12,,,,PRO-070
+False,Karatage Services Limited,Approved,2025-05-01,2026-04-30,3600.0,4320.0,5,40 Portland Place,12,Stephanie Peachey,SP@karatage.io,,KAR-052
+False,Gil Ofer,Approved,2025-07-01,2026-06-30,5875.0,7050.0,10,11 Queen Anne Street,12,Dror Keren,drork@quantum-pacific.com,07823 352 487,GIL-008
+False,Greystar,Approved,2025-09-01,2026-08-31,4025.0,4830.0,10,Sailmakers - Sirocco Tower,12,Benjamin Nisbet,benjamin.nisbet@greystar.com,70823 907 259,GRE-012
+False,Emad Al Bahar,Approved,2025-09-01,2026-08-31,5750.0,6900.0,8,20 Grosvenor Square,12,,,,EMA-038
+False,Twenty Grosvenor Square Management Company Limited,Approved,2025-09-01,2026-08-31,24155.75,28986.9,15,20 Grosvenor Square,12,Steven Moynihan,steven.moynihan@fourseasons.com,07951 044 502,TWE-031
+False,Tim Guest,Approved,2025-09-01,2026-08-31,5750.0,6900.0,10,48 Yeomans Row,12,Milly Kaye,milly@londonland.co.uk,07956 128 741,TIM-002
+False,Ed Smith,Approved,2025-09-01,2026-02-28,,,5,"Apartment 1, 45-47 Cheval Place",6,Drew Allen,drew@sfo.com.au,07380 282 468,ED -032
+False,Altman James,Open,2025-08-01,2026-07-31,3900.0,4680.0,4,Altman James,12,,,,ALT-072
+False,Bold & Reeves,Approved,2025-07-01,2026-06-30,9610.0,11532.0,12,42 Old Church St,12,,,,BOL-071
+False,Iurii Bednyi,Approved,2025-08-01,2026-07-31,2875.0,3450.0,5,4 The Old Orchard,12,Anjelika Eremeeva,anjelika.eremeeva@xtxmarkets.com,+44 7840 508 087,ANJ-044
+False,Kareem Hodieb,Open,2025-07-01,2026-06-30,1775.0,2130.0,5,"Flat 13, 49 Pont St",12,Kareem Hodieb,khodieb@gmail.com,07771 00 66 77,KAR-011
+False,Tommy Silfanus,Approved,2025-04-01,2026-03-31,5750.0,6900.0,10,3 Garden Road,12,Radu Sentiveanu,londonvillagardenroad@gmail.com,07920 048 304,GIE-035
+False,Neotel,Approved,2025-05-01,2026-04-30,2875.0,3450.0,5,65 Aberdare Gaedens,12,Juanita Katsianis,juanita@astonchase.com,07534 405937,NEO-028
+False,MASH,Approved,2025-06-01,2026-05-31,18975.0,22770.0,15,The Birdhouse,12,Paula Picarelli,paula@mashservices.co.uk,07826 483 785,MAS-029
+False,River Park Tower R&F ONE (UK) Ltd C/O LRM Prime LTD,Rejected,2025-04-01,2026-03-31,18250.0,21900.0,16,River Park Tower,12,,,,RIV-066
+False,MASH,Approved,2025-04-01,2026-03-31,18975.0,22770.0,20,Chemin d’Alani 14,12,,,,MAS-056
+True,10 Basing Street Limited c/o Westbourne Mangement Ltd,Rejected,2024-04-01,2025-03-31,2875.0,3450.0,5,10 Basing Street,12,Oliver Sampson-Bancroft,info@wb19.co.uk,0203 987 5053,10 -022
+False,Deston Management,Approved,2025-03-01,2026-02-28,1725.0,2070.0,5,Apt1.03,12,William Pope,w.pope@destonmanagement.com,07701 046 898,DES-034
+False,Raffaele Minicione,Rejected,2025-02-01,2026-01-31,5750.0,6900.0,8,25 Lennox Gardens,12,Sadie Foster,lennox@mincione.com,,RAF-063
+False,Higginsongrey,Rejected,2025-03-01,2026-02-28,10500.0,12600.0,8,30 Queens Gate Terrace,12,,,,HIG-064
+False,Cilantro FM,Rejected,2025-04-01,2026-03-31,2875.0,3450.0,5,21 Wapping Lane,12,Fionn Cronin,fionn.cronin@cilantrofm.co.uk,+353 86 412 94 94,CIL-065
+False,Fredrik Stenmo,Approved,2025-04-01,2026-03-31,1725.0,2070.0,5,6 Hamilton Drive,12,Asli Karabulut,Asli.Karabulut@celox-group.com,07736 973 297,FRE-025
+False,"Fry Asset Management Ltd,",Approved,2025-04-01,2026-03-31,1725.0,2070.0,3,20 Eaton Place,12,Maxine Winfield,maxine@fry.co.uk,07825260749,RHO-026
+True,Tej Lalvani,Rejected,2024-02-01,2025-01-31,2875.0,3450.0,5,Westerly,12,,,07387 413 288,TEJ-020
+False,Excel Winner UK Ltd C/O LRM Prime,Approved,2025-05-01,2026-04-30,4025.0,4830.0,4,Thames City,12,,,,EXC-067
+True,Mr and Mrs Bekenstein c/o Portland Private Office.,Rejected,2024-11-01,2025-10-31,5750.0,6900.0,8,13 Chelsea Square,12,,,,MR -060
+False,John Hartley,Approved,2025-03-01,2026-02-28,1725.0,2070.0,5,5 The Courtyard,12,John Hartley,John@hartleywalford.com,07817 822 950,JOH-036
+False,Cilantro FM,Rejected,2024-10-01,2027-09-30,,,5,Good Luck Hope,36,Fionn Cronin,fionn.cronin@cilantrofm.co.uk,+353 86 412 94 94,NG -042
+True,Tavener,Rejected,2024-04-01,2025-03-31,3500.0,4200.0,5,Apt 2.02 - 20 Grosvenor Square,12,,,,EMA-039
+True,Buchanan and Curwen,Rejected,2024-04-01,2025-03-31,3500.0,4200.0,5,Apt 2.02 - 20 Grosvenor Square,12,,,,BUC-040
+True,MASH,Rejected,2024-03-01,2025-02-28,2875.0,3450.0,5,24 Clabon Mews,12,,,,MAS-054
+True,Alex Haidas,Rejected,2023-04-01,2024-03-31,2875.0,3450.0,5,23 Jubilee Place,12,Sarah Kennedy,sk@bluewallcap.com,07894 734 751,ALE-024
+True,Gareth Lewis,Rejected,2024-02-01,2025-01-31,1725.0,2070.0,5,"Plot 3, 7 Portland Place",12,Layni Laypang,Layni.Laypang@macegroup.com,020 3522 3050,GAR-019
+True,Apartment 6,Rejected,2023-10-01,2024-09-30,2875.0,3450.0,5,Apartment 6,12,,,,APA-048
+True,Nigel Holman,Rejected,2023-10-01,2024-09-30,2875.0,3450.0,5,"Apt 2, 20-22 Eaton Place",12,,,,NIG-049
+True,Select Group,Rejected,2023-09-01,2024-08-31,15525.0,18630.0,5,96-98 Baker Street,12,,,,SEL-047
+True,Bold & Reeves,Rejected,2023-11-01,2024-10-31,32360.0,38832.0,24,42 Old Church St,12,,,,BOL-045
+True,Selva Pankaj,Rejected,2022-11-01,2023-10-31,5750.0,6900.0,10,Bentley House,12,Paul Myers,Paul.Myers@rtc.uk.net,07956 444 064,SEL-033
+True,Vascroft,Rejected,2023-10-01,2024-09-30,1725.0,2070.0,5,Vascroft Estate,12,Bhavesh Hari,BhaveshH@vascroft.com,079 7177 3461,VAS-050
+True,Blackhorse Mills - Urbanbubble LTD,Rejected,2023-05-01,2024-04-30,5750.0,6900.0,8,Wickford Way,12,,,,BLA-041
+True,Kuljinder Bahia,Rejected,2023-04-01,2024-03-31,5750.0,6900.0,10,19 Upper Brook Street,12,,,,KUL-037
+True,James Seago,Rejected,2022-04-01,2023-03-31,1725.0,2070.0,5,2nd Floor,12,James Seago,jamesseago32@gmail.com,07894 865 914,JAM-027
+True,Bold & Reeves,Rejected,2022-03-01,2023-02-28,5750.0,6900.0,10,42 Old Church St,12,Angus Thackray,Angus.Thackray@boldandreeves.co.uk,07925 146368,BOL-023
+True,Emerald HT2 Ltd.,Rejected,2022-08-01,2023-01-31,2875.0,3450.0,5,59 Hamilton Terrace,6,Jessica Lonsdale,JessicaL@sfpgroup.com,020 7536 2930,EME-030
