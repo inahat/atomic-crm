@@ -4,18 +4,23 @@
 
 Add at: `https://github.com/inahat/atomic-crm/settings/secrets/actions`
 
-### Database Connection (use backup_user)
+### Database Connection (RECOMMENDED)
+
+**Use project-qualified username format:**
+
 ```
 Name: DATABASE_URL
-Value: postgresql://backup_user:BackupUser2026!Secure#Pass@aws-1-eu-west-1.pooler.supabase.com:5432/postgres
+Value: postgresql://backup_user.bxosgtiwjkpuguyggicm:BackupUser2026%21Secure%23Pass@aws-1-eu-west-1.pooler.supabase.com:5432/postgres
 ```
 
-**Note:** A dedicated `backup_user` with read-only access has been created for security.
-
-**Alternative:** Use the main postgres user:
+**Alternative (postgres user):**
 ```
 postgresql://postgres.bxosgtiwjkpuguyggicm:7s56of1Zpc75J0n3%5D@aws-1-eu-west-1.pooler.supabase.com:5432/postgres
 ```
+
+**Key points:**
+- Username must be `username.PROJECT_REF` for pooler
+- Special characters must be URL-encoded (`!` → `%21`, `#` → `%23`, `]` → `%5D`)
 
 ### Supabase Storage (S3)
 ```
