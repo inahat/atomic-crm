@@ -37,14 +37,18 @@ jobs:
           fi
           echo "✓ Database password is configured"
           
+          # Force IPv4 to avoid IPv6 network issues on GitHub Actions
+          # GitHub Actions runners don't have IPv6 connectivity
+          export DOCKER_DEFAULT_PLATFORM=linux/amd64
+          
           TIMESTAMP=$(date +%Y-%m-%d-%H%M)
           FILENAME="atomic-crm-backup-$TIMESTAMP.sql"
           
           echo "Creating backup: $FILENAME"
-          echo "Using Supabase CLI with direct database connection"
+          echo "Using Supabase CLI with direct database connection (IPv4 forced)"
           
-          # Use official Supabase CLI backup method
-          supabase db dump --db-url "$SUPABASE_DB_URL" -f "$FILENAME"
+          # Use official Supabase CLI backup method with --linked=false to avoid local config
+          supabase db dump --db-url "$SUPABASE_DB_URL" --linked=false -f "$FILENAME"
           
           # Check if backup succeeded
           if [ $? -eq 0 ]; then
