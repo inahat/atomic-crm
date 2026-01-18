@@ -10,24 +10,24 @@ The automated backup workflow has been created at `.github/workflows/backup-data
 - 🔄 Can be triggered manually from GitHub UI
 - 📦 Compressed SQL dumps
 
-## 🔧 Step 2: Configure Supabase Access Token
+## 🔧 Step 2: Configure Database Password
 
-You need to add your Supabase access token as a GitHub secret:
+You need to add your Supabase database password as a GitHub secret:
 
-### Get Your Supabase Access Token
+### Get Your Database Password
 
-1. Go to [Supabase Account Settings](https://supabase.com/dashboard/account/tokens)
-2. Click "Generate New Token"
-3. Give it a name like "GitHub Actions Backup"
-4. Copy the token (you'll only see it once!)
+1. Go to [Supabase Database Settings](https://supabase.com/dashboard/project/bxosgtiwjkpuguyggicm/settings/database)
+2. Scroll to "Database Password"
+3. Click "Reset Database Password" if you don't have it saved
+4. Copy the password (you'll only see it once!)
 
 ### Add Secret to GitHub
 
 1. Go to your GitHub repository: https://github.com/inahat/atomic-crm
 2. Click **Settings** → **Secrets and variables** → **Actions**
 3. Click **New repository secret**
-4. Name: `SUPABASE_ACCESS_TOKEN`
-5. Value: 
+4. Name: `SUPABASE_DB_PASSWORD`
+5. Value: Paste your database password
 6. Click **Add secret**
 
 ## ✅ Step 3: Test the Workflow
