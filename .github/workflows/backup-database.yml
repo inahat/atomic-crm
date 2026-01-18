@@ -48,7 +48,7 @@ jobs:
           PGPASSWORD="$SUPABASE_DB_PASSWORD" pg_dump \
             -h aws-0-eu-west-1.pooler.supabase.com \
             -p 6543 \
-            -U postgres.bxosgtiwjkpuguyggicm \
+            -U postgres \
             -d postgres \
             --no-owner \
             --no-acl \
