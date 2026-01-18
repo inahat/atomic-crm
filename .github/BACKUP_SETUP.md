@@ -1,68 +1,77 @@
-# Database Backup Setup Instructions
+# GitHub Artifacts Backup Setup
 
-## ✅ Step 1: GitHub Actions Workflow Created
+## Overview
 
-The automated backup workflow has been created at `.github/workflows/backup-database.yml`
+Simple automated backups saved to GitHub Artifacts (no external storage needed).
 
-**Features:**
-- 🕐 Runs daily at 2 AM UTC
-- 💾 Keeps backups for 7 days
-- 🔄 Can be triggered manually from GitHub UI
-- 📦 Compressed SQL dumps
+## Required GitHub Secrets
 
-## 🔧 Step 2: Configure Database Password
+Add these at: `https://github.com/inahat/atomic-crm/settings/secrets/actions`
 
-You need to add your Supabase database password as a GitHub secret:
+### 1. Database Connection
+```
+Name: DATABASE_URL
+Value: postgresql://postgres:7s56of1Zpc75J0n3]@db.bxosgtiwjkpuguyggicm.supabase.co:5432/postgres
+```
 
-### Get Your Database Password
+### 2. Encryption Passphrase
+```
+Name: BACKUP_PASSPHRASE
+Value: [choose-a-strong-passphrase-20+-characters]
+```
 
-1. Go to [Supabase Database Settings](https://supabase.com/dashboard/project/bxosgtiwjkpuguyggicm/settings/database)
-2. Scroll to "Database Password"
-3. Click "Reset Database Password" if you don't have it saved
-4. Copy the password (you'll only see it once!)
+**That's it!** Only 2 secrets needed.
 
-### Add Secret to GitHub
+## How It Works
 
-1. Go to your GitHub repository: https://github.com/inahat/atomic-crm
-2. Click **Settings** → **Secrets and variables** → **Actions**
-3. Click **New repository secret**
-4. Name: `SUPABASE_DB_PASSWORD`
-5. Value: Paste your database password
-6. Click **Add secret**
+1. **Schedule:** Runs daily at 2 AM UTC
+2. **Backup:** Creates encrypted `pg_dump` (custom format)
+3. **Storage:** Saves to GitHub Artifacts (90-day retention)
+4. **Manual:** Can trigger anytime from GitHub Actions
 
-## ✅ Step 3: Test the Workflow
+## Downloading Backups
 
-Once the secret is configured:
+1. Go to: `https://github.com/inahat/atomic-crm/actions`
+2. Click on a "Scheduled DB Backup" workflow run
+3. Scroll to "Artifacts" section
+4. Download the backup file
 
-1. Go to **Actions** tab in your GitHub repo
-2. Click **Database Backup** workflow
-3. Click **Run workflow** → **Run workflow**
-4. Wait for it to complete (~1-2 minutes)
-5. Download the backup artifact to verify
+## Restoring a Backup
 
-## 📅 Automated Schedule
+### 1. Decrypt
+```bash
+openssl enc -aes-256-cbc -d -pbkdf2 -in backup-TIMESTAMP.dump.enc -out backup.dump
+# Enter your BACKUP_PASSPHRASE when prompted
+```
 
-After setup, backups will run automatically:
-- **Daily at 2 AM UTC** (3 AM CET / 4 AM CEST)
-- **Retention: 7 days** (older backups auto-deleted)
-- **Location:** GitHub Actions Artifacts
+### 2. Restore
+```bash
+pg_restore -h db.bxosgtiwjkpuguyggicm.supabase.co -p 5432 -U postgres -d postgres -v backup.dump
+```
 
-## 🔍 Viewing Backups
+## Testing
 
-1. Go to **Actions** tab
-2. Click on any successful **Database Backup** run
-3. Scroll to **Artifacts** section
-4. Download `database-backup-XXX.sql`
+1. **Add the 2 secrets** to GitHub
+2. **Manual trigger:**
+   - Go to Actions → "Scheduled DB Backup"
+   - Click "Run workflow"
+3. **Verify:**
+   - Check workflow completes
+   - Download artifact
+   - Test decryption
 
-## ⚠️ Important Notes
+## Features
 
-- Free GitHub accounts get **500 MB artifact storage** and **2,000 minutes/month**
-- Each backup is ~5-50 MB (depending on data size)
-- Backups are automatically deleted after 7 days
-- You can manually trigger backups anytime from GitHub UI
+- ✅ Automated daily backups
+- ✅ AES-256 encryption
+- ✅ 90-day retention
+- ✅ No external dependencies
+- ✅ Free (uses GitHub Actions)
 
-## Next Steps
+## Limitations
 
-After configuring the secret, I'll:
-1. Create a manual backup right now
-2. Show you how to test the restore process
+- **Retention:** 90 days maximum (GitHub limit)
+- **Storage:** Counts toward GitHub storage quota
+- **Access:** Only via GitHub Actions UI
+
+For longer retention, consider upgrading to Supabase Pro ($25/mo) for Point-in-Time Recovery.
