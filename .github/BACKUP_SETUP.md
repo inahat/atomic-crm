@@ -8,10 +8,10 @@ Simple automated backups saved to GitHub Artifacts (no external storage needed).
 
 Add these at: `https://github.com/inahat/atomic-crm/settings/secrets/actions`
 
-### 1. Database Connection
+### 1. Database Password
 ```
-Name: DATABASE_URL
-Value: postgresql://postgres:7s56of1Zpc75J0n3]@db.bxosgtiwjkpuguyggicm.supabase.co:5432/postgres
+Name: PGPASSWORD
+Value: 7s56of1Zpc75J0n3]
 ```
 
 ### 2. Encryption Passphrase

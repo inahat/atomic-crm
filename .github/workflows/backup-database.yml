@@ -25,8 +25,11 @@ jobs:
           FILENAME="backup-${TIMESTAMP}.dump"
           ENCRYPTED_NAME="${FILENAME}.enc"
           
+          # Use session pooler for IPv4 compatibility
+          POOLER_URL="postgresql://${PGUSER}:${PGPASSWORD}@aws-0-eu-west-1.pooler.supabase.com:5432/postgres"
+          
           echo "Creating backup: $FILENAME"
-          pg_dump -Fc --file="${BACKUP_DIR}/${FILENAME}" "${DATABASE_URL}"
+          pg_dump -Fc --file="${BACKUP_DIR}/${FILENAME}" "$POOLER_URL"
           
           echo "Encrypting backup: $ENCRYPTED_NAME"
           openssl enc -aes-256-cbc -salt -pbkdf2 -pass env:BACKUP_PASSPHRASE \
@@ -39,7 +42,8 @@ jobs:
           echo "Backup completed: $ENCRYPTED_NAME"
           ls -lh "${BACKUP_DIR}/${ENCRYPTED_NAME}"
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PGUSER: postgres
+          PGPASSWORD: ${{ secrets.PGPASSWORD }}
           BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
 
       - name: Upload backup artifact
