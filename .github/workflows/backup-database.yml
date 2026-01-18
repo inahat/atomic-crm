@@ -1,0 +1,93 @@
+name: Database Backup
+
+on:
+  schedule:
+    # Run daily at 2 AM UTC (3 AM CET / 4 AM CEST)
+    - cron: '0 2 * * *'
+  workflow_dispatch:  # Allow manual trigger from GitHub UI
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Create database backup
+        env:
+          # Use session pooler instead of direct connection for better IPv4 compatibility
+          SUPABASE_DB_URL: postgresql://postgres:${{ secrets.SUPABASE_DB_PASSWORD }}@aws-0-eu-west-1.pooler.supabase.com:5432/postgres
+        run: |
+          # Check if password is set
+          if [ -z "${{ secrets.SUPABASE_DB_PASSWORD }}" ]; then
+            echo "ERROR: SUPABASE_DB_PASSWORD secret is not set!"
+            echo "Please add your database password to GitHub secrets."
+            echo "Get it from: https://supabase.com/dashboard/project/bxosgtiwjkpuguyggicm/settings/database"
+            exit 1
+          fi
+          echo "✓ Database password is configured"
+          
+          TIMESTAMP=$(date +%Y-%m-%d-%H%M)
+          FILENAME="atomic-crm-backup-$TIMESTAMP.sql"
+          
+          echo "Creating backup: $FILENAME"
+          echo "Using Supabase CLI with session pooler (IPv4 compatible)"
+          
+          # Use session pooler for better IPv4 compatibility
+          supabase db dump --db-url "$SUPABASE_DB_URL" --linked=false -f "$FILENAME"
+          
+          # Check if backup succeeded
+          if [ $? -eq 0 ]; then
+            echo "✓ Backup command succeeded"
+          else
+            echo "ERROR: Backup command failed"
+            exit 1
+          fi
+          
+          # Verify backup was created and has content
+          if [ ! -f "$FILENAME" ]; then
+            echo "ERROR: Backup file was not created!"
+            exit 1
+          fi
+          
+          FILE_SIZE=$(stat -c%s "$FILENAME" 2>/dev/null)
+          if [ "$FILE_SIZE" -eq 0 ]; then
+            echo "ERROR: Backup file is empty!"
+            exit 1
+          fi
+          
+          # Show backup file size
+          ls -lh "$FILENAME"
+          echo "✓ Backup created successfully! Size: $FILE_SIZE bytes"
+
+      - name: Upload backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: database-backup-${{ github.run_number }}
+          path: "*.sql"
+          retention-days: 7  # Keep backups for 7 days
+          compression-level: 9  # Maximum compression
+
+      - name: Backup summary
+        if: success()
+        run: |
+          echo "### Database Backup Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Backup completed successfully**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Timestamp:** $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Project:** AtomicCRM (bxosgtiwjkpuguyggicm)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Connection:** Session Pooler (IPv4)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Retention:** 7 days" >> $GITHUB_STEP_SUMMARY
+          echo "- **Run Number:** ${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
