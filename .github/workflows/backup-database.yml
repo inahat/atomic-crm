@@ -39,6 +39,34 @@ jobs:
         run: |
           echo "Secrets loaded into environment for subsequent steps."
 
+      - name: Test database connection
+        run: |
+          echo "Testing database connectivity..."
+          if [[ -n "${DATABASE_URL:-}" ]]; then
+            echo "Using DATABASE_URL"
+            if pg_isready -d "${DATABASE_URL}"; then
+              echo "✓ Database is ready"
+            else
+              echo "✗ Database connection failed"
+              exit 1
+            fi
+          else
+            echo "Using individual PG credentials"
+            if pg_isready -h "${PGHOST}" -p "${PGPORT}" -U "${PGUSER}" -d "${PGDATABASE}"; then
+              echo "✓ Database is ready"
+            else
+              echo "✗ Database connection failed"
+              exit 1
+            fi
+          fi
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PGHOST: ${{ secrets.PGHOST }}
+          PGPORT: ${{ secrets.PGPORT }}
+          PGUSER: ${{ secrets.PGUSER }}
+          PGPASSWORD: ${{ secrets.PGPASSWORD }}
+          PGDATABASE: ${{ secrets.PGDATABASE }}
+
       - name: Run backup script
         run: |
           chmod +x ./scripts/backup.sh
