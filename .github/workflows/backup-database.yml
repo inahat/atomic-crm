@@ -75,19 +75,13 @@ jobs:
           compression-level: 9  # Maximum compression
 
       - name: Backup summary
-        if: always()
+        if: success()
         run: |
           echo "### Database Backup Status" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          if ls *.sql 1> /dev/null 2>&1; then
-            echo "✅ **Backup completed successfully**" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "- **Timestamp:** $(date)" >> $GITHUB_STEP_SUMMARY
-            echo "- **Project:** AtomicCRM (bxosgtiwjkpuguyggicm)" >> $GITHUB_STEP_SUMMARY
-            echo "- **Retention:** 7 days" >> $GITHUB_STEP_SUMMARY
-            echo "- **Run Number:** ${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ **Backup failed**" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "Check the workflow logs for error details." >> $GITHUB_STEP_SUMMARY
-          fi
+          echo "✅ **Backup completed successfully**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Timestamp:** $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Project:** AtomicCRM (bxosgtiwjkpuguyggicm)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Retention:** 7 days" >> $GITHUB_STEP_SUMMARY
+          echo "- **Run Number:** ${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
