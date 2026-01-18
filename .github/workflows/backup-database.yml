@@ -19,7 +19,7 @@ jobs:
       - name: Install dependencies (awscli, pg tools)
         run: |
           sudo apt-get update
-          sudo apt-get install -y awscli postgresql-client openssl python3 python3-pip
+          sudo apt-get install -y postgresql-client openssl python3 python3-pip
           pip3 install --upgrade awscli
 
       - name: Set environment from secrets (no-op step to document secrets)
