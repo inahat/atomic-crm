@@ -45,7 +45,7 @@ jobs:
           echo "Using Supabase CLI with session pooler (IPv4 compatible)"
           
           # Use session pooler for better IPv4 compatibility
-          supabase db dump --db-url "$SUPABASE_DB_URL" --linked=false -f "$FILENAME"
+          supabase db dump --db-url "$SUPABASE_DB_URL" -f "$FILENAME"
           
           # Check if backup succeeded
           if [ $? -eq 0 ]; then
