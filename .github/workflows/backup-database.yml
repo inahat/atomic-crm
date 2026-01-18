@@ -19,17 +19,17 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install PostgreSQL client
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y postgresql-client
-          
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
       - name: Create database backup
         env:
-          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          SUPABASE_DB_URL: postgresql://postgres:${{ secrets.SUPABASE_DB_PASSWORD }}@db.bxosgtiwjkpuguyggicm.supabase.co:5432/postgres
         run: |
           # Check if password is set
-          if [ -z "$SUPABASE_DB_PASSWORD" ]; then
+          if [ -z "${{ secrets.SUPABASE_DB_PASSWORD }}" ]; then
             echo "ERROR: SUPABASE_DB_PASSWORD secret is not set!"
             echo "Please add your database password to GitHub secrets."
             echo "Get it from: https://supabase.com/dashboard/project/bxosgtiwjkpuguyggicm/settings/database"
@@ -41,18 +41,10 @@ jobs:
           FILENAME="atomic-crm-backup-$TIMESTAMP.sql"
           
           echo "Creating backup: $FILENAME"
-          echo "Database: aws-0-eu-west-1.pooler.supabase.com (connection pooler - session mode)"
+          echo "Using Supabase CLI with direct database connection"
           
-          # Use connection pooler in session mode (port 5432)
-          # Session mode is required for pg_dump (persistent connection)
-          PGPASSWORD="$SUPABASE_DB_PASSWORD" pg_dump \
-            -h aws-0-eu-west-1.pooler.supabase.com \
-            -p 5432 \
-            -U postgres \
-            -d postgres \
-            --no-owner \
-            --no-acl \
-            -f "$FILENAME"
+          # Use official Supabase CLI backup method
+          supabase db dump --db-url "$SUPABASE_DB_URL" -f "$FILENAME"
           
           # Check if backup succeeded
           if [ $? -eq 0 ]; then
