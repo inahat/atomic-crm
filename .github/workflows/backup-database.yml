@@ -83,7 +83,7 @@ jobs:
           print("DB:", p.path.lstrip("/"))
           PY
 
-      - name: Test pg_dump authentication (safe)
+      - name: Test pg_dump authentication (capture error)
         shell: bash
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -98,15 +98,18 @@ jobs:
             exit 1
           fi
           
-          # Try pg_dump to /tmp/test.dump (no secrets printed)
-          if pg_dump -Fc --file=/tmp/test.dump "${DATABASE_URL}" >/dev/null 2>&1; then
+          # Capture stderr to file (no secrets in output)
+          if pg_dump -Fc --file=/tmp/test.dump "${DATABASE_URL}" 2>/tmp/pg_dump_error.txt; then
             rm -f /tmp/test.dump
             echo "✓ AUTH_OK - pg_dump authentication successful"
             exit 0
           else
             rm -f /tmp/test.dump || true
             echo "✗ AUTH_FAILED - pg_dump authentication failed"
-            echo "Hint: Ensure DATABASE_URL uses project-qualified username (e.g., postgres.PROJECT_REF)"
+            echo ""
+            echo "Error details (password masked):"
+            # Print error but mask the password
+            sed 's/:[^@]*@/:***@/g' /tmp/pg_dump_error.txt || cat /tmp/pg_dump_error.txt
             exit 1
           fi
 
