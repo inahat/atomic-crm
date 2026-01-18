@@ -2,67 +2,65 @@ name: Scheduled DB Backup
 
 on:
   schedule:
-    - cron: '0 2 * * *'  # Every day at 02:00 UTC
-  workflow_dispatch: {}  # Allow manual trigger
+    - cron: '0 3 * * *' # runs daily at 03:00 UTC by default; change as needed
+  workflow_dispatch: {} # allows manual run
 
 jobs:
   backup:
     runs-on: ubuntu-latest
-    
     env:
       BACKUP_DIR: ./backups
-    
+      RETENTION_COUNT: '14'
+      S3_REGION: 'us-east-1'
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Create backup directory
-        run: mkdir -p $BACKUP_DIR
-
-      - name: Create database backup
+      - name: Install dependencies (awscli, pg tools)
         run: |
-          TIMESTAMP=$(date -u +%Y%m%dT%H%M%SZ)
-          FILENAME="backup-${TIMESTAMP}.dump"
-          ENCRYPTED_NAME="${FILENAME}.enc"
-          
-          # Use session pooler for IPv4 compatibility
-          POOLER_URL="postgresql://${PGUSER}:${PGPASSWORD}@aws-0-eu-west-1.pooler.supabase.com:5432/postgres"
-          
-          echo "Creating backup: $FILENAME"
-          pg_dump -Fc --file="${BACKUP_DIR}/${FILENAME}" "$POOLER_URL"
-          
-          echo "Encrypting backup: $ENCRYPTED_NAME"
-          openssl enc -aes-256-cbc -salt -pbkdf2 -pass env:BACKUP_PASSPHRASE \
-            -in "${BACKUP_DIR}/${FILENAME}" \
-            -out "${BACKUP_DIR}/${ENCRYPTED_NAME}"
-          
-          # Remove unencrypted file
-          rm "${BACKUP_DIR}/${FILENAME}"
-          
-          echo "Backup completed: $ENCRYPTED_NAME"
-          ls -lh "${BACKUP_DIR}/${ENCRYPTED_NAME}"
+          sudo apt-get update
+          sudo apt-get install -y awscli postgresql-client openssl python3 python3-pip
+          pip3 install --upgrade awscli
+
+      - name: Set environment from secrets (no-op step to document secrets)
         env:
-          PGUSER: postgres
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PGHOST: ${{ secrets.PGHOST }}
+          PGPORT: ${{ secrets.PGPORT }}
+          PGUSER: ${{ secrets.PGUSER }}
           PGPASSWORD: ${{ secrets.PGPASSWORD }}
+          PGDATABASE: ${{ secrets.PGDATABASE }}
+          S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
+          S3_BUCKET: ${{ secrets.S3_BUCKET }}
+          S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+          S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+          S3_REGION: ${{ secrets.S3_REGION }}
           BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          echo "Secrets loaded into environment for subsequent steps."
+
+      - name: Run backup script
+        run: |
+          chmod +x ./scripts/backup.sh
+          ./scripts/backup.sh
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PGHOST: ${{ secrets.PGHOST }}
+          PGPORT: ${{ secrets.PGPORT }}
+          PGUSER: ${{ secrets.PGUSER }}
+          PGPASSWORD: ${{ secrets.PGPASSWORD }}
+          PGDATABASE: ${{ secrets.PGDATABASE }}
+          S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
+          S3_BUCKET: ${{ secrets.S3_BUCKET }}
+          S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+          S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+          S3_REGION: ${{ secrets.S3_REGION }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+          RETENTION_COUNT: ${{ env.RETENTION_COUNT }}
 
       - name: Upload backup artifact
         uses: actions/upload-artifact@v4
         with:
-          name: db-backup-${{ github.run_id }}
+          name: db-backup-${{ github.run_id }}-${{ github.run_number }}
           path: backups/*.enc
-          retention-days: 90  # Maximum retention
-
-      - name: Backup summary
-        if: success()
-        run: |
-          echo "### Database Backup Status" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ **Backup completed successfully**" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **Timestamp:** $(date)" >> $GITHUB_STEP_SUMMARY
-          echo "- **Project:** AtomicCRM (bxosgtiwjkpuguyggicm)" >> $GITHUB_STEP_SUMMARY
-          echo "- **Storage:** GitHub Artifacts (90 days)" >> $GITHUB_STEP_SUMMARY
-          echo "- **Run Number:** ${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Download from: Actions → This workflow run → Artifacts" >> $GITHUB_STEP_SUMMARY
+          retention-days: 30
