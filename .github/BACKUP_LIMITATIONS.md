@@ -1,82 +1,78 @@
 # Database Backup Limitations (Free Tier)
 
-## ⚠️ Automated Backups Not Available
+## ⚠️ Automated GitHub Actions Backups: NOT POSSIBLE
 
-**Automated GitHub Actions backups are not feasible on Supabase Free tier** due to network compatibility issues:
+After extensive testing, **automated GitHub Actions backups are not feasible on Supabase Free tier**.
 
-- **Issue:** Supabase databases use IPv6 addresses
-- **Problem:** GitHub Actions runners only support IPv4
-- **Result:** Connection fails with "Network is unreachable"
+### What We Tried
 
-### Solutions
+1. ✗ Direct connection (`db.PROJECT.supabase.co:5432`) - IPv6 network unreachable
+2. ✗ Connection pooler transaction mode (port 6543) - Authentication failed
+3. ✗ Connection pooler session mode (port 5432) - Authentication failed
+4. ✗ Various CLI flags and configurations - All failed
 
-1. **Upgrade to Pro Plan** ($25/mo)
-   - Includes Point-in-Time Recovery (PITR)
-   - IPv4 Add-On available
-   - Automated daily backups
-   - [Upgrade here](https://supabase.com/dashboard/org/_/billing)
+### Why It Doesn't Work
 
-2. **Use Manual Backups** (Free, recommended for Free tier)
-   - See instructions below
+- **GitHub Actions:** Only supports IPv4
+- **Supabase Free Tier:** Uses IPv6 addresses
+- **Result:** "Network unreachable" or "Tenant or user not found" errors
 
-## 📦 Manual Backup Methods
+### The Solution: Upgrade or Manual Backups
 
-### Option 1: Local Backup (Recommended)
+## ✅ Working Solutions
 
-Run this command locally on your machine:
+### Option 1: Manual Backups (Free)
 
-```powershell
-# Install Supabase CLI (first time only)
-npm install -g supabase
-
-# Create backup
-supabase db dump --db-url "postgresql://postgres:[YOUR-PASSWORD]@db.bxosgtiwjkpuguyggicm.supabase.co:5432/postgres" -f "backup-$(Get-Date -Format 'yyyy-MM-dd').sql"
-```
-
-**Get your database password:**
-https://supabase.com/dashboard/project/bxosgtiwjkpuguyggicm/settings/database
-
-### Option 2: Supabase Dashboard
-
-1. Go to [Database Settings](https://supabase.com/dashboard/project/bxosgtiwjkpuguyggicm/settings/database)
-2. Scroll to "Backups" section
+**Easiest: Supabase Dashboard**
+1. Go to https://supabase.com/dashboard/project/bxosgtiwjkpuguyggicm/settings/database
+2. Scroll to "Database backups"
 3. Click "Download backup"
 
-**Note:** Free tier only keeps backups for 7 days
-
-### Option 3: pg_dump (Advanced)
-
-If you have PostgreSQL installed:
-
+**Using CLI locally:**
 ```powershell
-$env:PGPASSWORD="[YOUR-PASSWORD]"
-pg_dump -h db.bxosgtiwjkpuguyggicm.supabase.co -p 5432 -U postgres -d postgres --no-owner --no-acl -f backup.sql
+supabase db dump --db-url "postgresql://postgres:[PASSWORD]@db.bxosgtiwjkpuguyggicm.supabase.co:5432/postgres" -f "backup.sql"
 ```
 
-## 🔄 Backup Schedule Recommendation
+**Schedule:** Weekly before major changes, before deployments
 
-For Free tier, we recommend:
+### Option 2: Local Automation (Free)
 
-- **Weekly manual backups** before major changes
-- **Before deployments** or schema migrations
-- **After important data imports**
+Use Windows Task Scheduler to run backups automatically from your PC:
 
-Store backups in:
-- Local secure location
-- Private cloud storage (Google Drive, Dropbox, etc.)
-- **Never commit to public repositories!**
+1. Create `backup.ps1`:
+```powershell
+$password = "YOUR-DB-PASSWORD"
+$date = Get-Date -Format "yyyy-MM-dd"
+supabase db dump --db-url "postgresql://postgres:$password@db.bxosgtiwjkpuguyggicm.supabase.co:5432/postgres" -f "backups/backup-$date.sql"
+```
 
-## 📝 Restore Process
+2. Schedule in Task Scheduler (daily/weekly)
 
-See [RESTORE_TESTING.md](./RESTORE_TESTING.md) for restore instructions.
+**Pros:** Free, reliable, automated  
+**Cons:** Requires your PC to be running
 
-## 💡 Alternative: Upgrade to Pro
+### Option 3: Upgrade to Pro ($25/month)
 
-If automated backups are critical:
-- **Pro Plan:** $25/month
-- **Includes:** PITR, automated backups, IPv4 support
-- **Upgrade:** https://supabase.com/dashboard/org/_/billing
+**Includes:**
+- ✅ Automated daily backups
+- ✅ Point-in-Time Recovery (PITR)
+- ✅ IPv4 Add-On for GitHub Actions
+- ✅ 7-day backup retention (vs 7 days on Free)
+
+[Upgrade here](https://supabase.com/dashboard/org/_/billing)
+
+## Recommendation
+
+**For Free Tier:** Use **manual backups** from Supabase Dashboard (easiest) or set up **local automation** with Task Scheduler.
+
+**For Production:** **Upgrade to Pro** - $25/mo is worth it for peace of mind and automated backups.
+
+## Files
+
+- Manual backup guide: `.github/MANUAL_BACKUP.md`
+- Restore guide: `.github/RESTORE_TESTING.md`
+- Workflow reference: `.agent/workflows/backup-database.md`
 
 ---
 
-**Summary:** Automated GitHub Actions backups require Supabase Pro plan. For Free tier, use manual backups as needed.
+**Note:** The GitHub Actions workflow in `.github/workflows/backup-database.yml` is kept for reference but will not work on Free tier.
