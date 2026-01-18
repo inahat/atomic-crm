@@ -43,10 +43,13 @@ jobs:
           FILENAME="atomic-crm-backup-$TIMESTAMP.sql"
           
           echo "Creating backup: $FILENAME"
-          echo "Project ref: bxosgtiwjkpuguyggicm"
+          echo "Database: db.bxosgtiwjkpuguyggicm.supabase.co"
+          
+          # Use db-url instead of project-ref
+          DB_URL="postgresql://postgres.bxosgtiwjkpuguyggicm:${SUPABASE_ACCESS_TOKEN}@aws-0-eu-west-1.pooler.supabase.com:6543/postgres"
           
           # Run backup with error handling
-          if supabase db dump -f "$FILENAME" --project-ref bxosgtiwjkpuguyggicm; then
+          if supabase db dump --db-url "$DB_URL" -f "$FILENAME"; then
             echo "✓ Backup command succeeded"
           else
             echo "ERROR: Backup command failed with exit code $?"
@@ -63,7 +66,7 @@ jobs:
           
           # Show backup file size
           ls -lh "$FILENAME"
-          FILE_SIZE=$(stat -f%z "$FILENAME" 2>/dev/null || stat -c%s "$FILENAME" 2>/dev/null)
+          FILE_SIZE=$(stat -c%s "$FILENAME" 2>/dev/null)
           echo "✓ Backup created successfully! Size: $FILE_SIZE bytes"
 
       - name: Upload backup artifact
