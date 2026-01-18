@@ -32,7 +32,7 @@ jobs:
           FILENAME="atomic-crm-backup-$TIMESTAMP.sql"
           
           echo "Creating backup: $FILENAME"
-          npx supabase db dump -f "$FILENAME" --project-ref bxosgtiwjkpuguyggicm
+          supabase db dump -f "$FILENAME" --project-ref bxosgtiwjkpuguyggicm
           
           # Show backup file size
           ls -lh "$FILENAME"
