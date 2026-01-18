@@ -41,13 +41,14 @@ jobs:
           FILENAME="atomic-crm-backup-$TIMESTAMP.sql"
           
           echo "Creating backup: $FILENAME"
-          echo "Database: db.bxosgtiwjkpuguyggicm.supabase.co"
+          echo "Database: aws-0-eu-west-1.pooler.supabase.com (connection pooler)"
           
-          # Use pg_dump directly
+          # Use connection pooler (port 6543) instead of direct connection (port 5432)
+          # This is more reliable for external connections
           PGPASSWORD="$SUPABASE_DB_PASSWORD" pg_dump \
-            -h db.bxosgtiwjkpuguyggicm.supabase.co \
-            -p 5432 \
-            -U postgres \
+            -h aws-0-eu-west-1.pooler.supabase.com \
+            -p 6543 \
+            -U postgres.bxosgtiwjkpuguyggicm \
             -d postgres \
             --no-owner \
             --no-acl \
