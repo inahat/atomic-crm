@@ -14,7 +14,7 @@ Password: BackupUser2026!Secure#Pass
 ### DATABASE_URL for GitHub Secret
 
 ```
-postgresql://backup_user:BackupUser2026!Secure#Pass@aws-0-eu-west-1.pooler.supabase.com:5432/postgres
+postgresql://backup_user:BackupUser2026!Secure#Pass@aws-1-eu-west-1.pooler.supabase.com:5432/postgres
 ```
 
 ### Permissions
