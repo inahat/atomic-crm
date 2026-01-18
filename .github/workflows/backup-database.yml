@@ -67,6 +67,22 @@ jobs:
           PGPASSWORD: ${{ secrets.PGPASSWORD }}
           PGDATABASE: ${{ secrets.PGDATABASE }}
 
+      - name: Debug DATABASE_URL (masked)
+        shell: bash
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          python3 - <<'PY'
+          import os,urllib.parse
+          u=os.environ.get("DATABASE_URL","")
+          p=urllib.parse.urlparse(u)
+          print("SCHEME:", p.scheme)
+          print("USERNAME:", p.username)
+          print("HOST:", p.hostname)
+          print("PORT:", p.port)
+          print("DB:", p.path.lstrip("/"))
+          PY
+
       - name: Test pg_dump authentication (safe)
         shell: bash
         env:
