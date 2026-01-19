@@ -27,7 +27,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y postgresql-client
 
-      # Corrected step: Use plain username format for pg_dump (confirmed working)
+      # Corrected step: Use project-qualified username format (postgres.PROJECT_REF)
+      # User verified this works with correct password
       - name: Create Database Backup
         run: |
           echo "Create backup directory..."
@@ -37,9 +38,8 @@ jobs:
           BACKUP_NAME="backup-${TIMESTAMP}.dump"
           
           echo "Starting pg_dump..."
-          # Use PGPASSWORD env var + connection string with plain username 'postgres'
-          # This avoids the "Tenant or user not found" error seen with project-qualified usernames
-          pg_dump "postgres://postgres@aws-1-eu-west-1.pooler.supabase.com:5432/postgres?sslmode=require" \
+          # Connection string uses project-qualified username
+          pg_dump "postgres://postgres.bxosgtiwjkpuguyggicm@aws-1-eu-west-1.pooler.supabase.com:5432/postgres?sslmode=require" \
             --format=custom \
             --file="backups/${BACKUP_NAME}" \
             --no-owner \

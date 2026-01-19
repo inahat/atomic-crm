@@ -1,7 +1,7 @@
 <#
 .SYNOPSIS
 Creates a local database backup for AtomicCRM (Supabase).
-Using confirmed working configuration for Free Tier (plain username).
+Verified working on Free Tier with correct credentials.
 
 .DESCRIPTION
 This script uses pg_dump to create a custom-format backup of the Supabase database.
@@ -16,7 +16,8 @@ $ErrorActionPreference = "Stop"
 # Configuration
 $PoolerHost = "aws-1-eu-west-1.pooler.supabase.com"
 $Port = "5432"
-$User = "postgres" # Plain username works for pg_dump authentication
+# CORRECT: Use project-qualified username
+$User = "postgres.bxosgtiwjkpuguyggicm" 
 $Database = "postgres"
 $BackupDir = Join-Path $PSScriptRoot "..\backups"
 
@@ -36,14 +37,13 @@ Write-Host "File:   $BackupFile" -ForegroundColor Gray
 Write-Host ""
 
 # Set PGPASSWORD environment variable (securely passed to pg_dump)
-# Note: Using the password confirmed to work
+# CORRECT PASSWORD (no trailing bracket)
 $env:PGPASSWORD = "7s56of1Zpc75J0n3"
 
 try {
     Write-Host "Running pg_dump..." -ForegroundColor Yellow
     
     # Execute pg_dump
-    # Uses confirmed working connection string format
     pg_dump "postgres://$($User)@$($PoolerHost):$($Port)/$($Database)?sslmode=require" `
         --format=custom `
         --file=$BackupFile `
@@ -52,7 +52,12 @@ try {
         --verbose
 
     if (Test-Path $BackupFile) {
-        $Size = (Get-Item $BackupFile).Length / 1MB
+        $FileItem = Get-Item $BackupFile
+        if ($FileItem.Length -eq 0) {
+            throw "Backup file is empty (0 KB). Auth likely failed."
+        }
+
+        $Size = $FileItem.Length / 1MB
         Write-Host ""
         Write-Host "✅ Backup successful!" -ForegroundColor Green
         Write-Host "Saved to: $BackupFile" -ForegroundColor Green
