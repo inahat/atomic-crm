@@ -1,11 +1,11 @@
 <#
 .SYNOPSIS
 Creates a local database backup for AtomicCRM (Supabase).
-Verified working on Free Tier with correct credentials.
+Verified working command (Flag-based syntax).
 
 .DESCRIPTION
-This script uses pg_dump to create a custom-format backup of the Supabase database.
-It requires PostgreSQL client tools (pg_dump) to be installed and in the PATH.
+This script uses pg_dump to create a custom-format backup.
+It uses explicit flags (-h, -U, etc.) which is more robust on Windows than connection URIs.
 
 .EXAMPLE
 .\scripts\backup-database.ps1
@@ -14,9 +14,8 @@ It requires PostgreSQL client tools (pg_dump) to be installed and in the PATH.
 $ErrorActionPreference = "Stop"
 
 # Configuration
-$PoolerHost = "aws-1-eu-west-1.pooler.supabase.com"
+$HostName = "aws-1-eu-west-1.pooler.supabase.com"
 $Port = "5432"
-# CORRECT: Use project-qualified username
 $User = "postgres.bxosgtiwjkpuguyggicm" 
 $Database = "postgres"
 $BackupDir = Join-Path $PSScriptRoot "..\backups"
@@ -28,33 +27,35 @@ if (-not (Test-Path $BackupDir)) {
 
 # Timestamp for filename
 $Timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
-$BackupFile = Join-Path $BackupDir "atomic_crm_backup_$Timestamp.dump"
+$BackupFile = Join-Path $BackupDir "supabase_backup_$Timestamp.dump"
 
 Write-Host "=== Starting AtomicCRM Database Backup ===" -ForegroundColor Cyan
-Write-Host "Target: $PoolerHost" -ForegroundColor Gray
+Write-Host "Target: $HostName" -ForegroundColor Gray
 Write-Host "User:   $User" -ForegroundColor Gray
 Write-Host "File:   $BackupFile" -ForegroundColor Gray
 Write-Host ""
 
-# Set PGPASSWORD environment variable (securely passed to pg_dump)
-# CORRECT PASSWORD (no trailing bracket)
+# Set PGPASSWORD environment variable
 $env:PGPASSWORD = "7s56of1Zpc75J0n3"
 
 try {
     Write-Host "Running pg_dump..." -ForegroundColor Yellow
     
-    # Execute pg_dump
-    pg_dump "postgres://$($User)@$($PoolerHost):$($Port)/$($Database)?sslmode=require" `
-        --format=custom `
-        --file=$BackupFile `
-        --no-owner `
-        --no-privileges `
-        --verbose
+    # Execute pg_dump using verified flag syntax
+    # -h host, -U user, -p port, -d db, -F c (custom), -b (blobs), -v (verbose), -f file
+    pg_dump -h $HostName `
+        -U $User `
+        -p $Port `
+        -d $Database `
+        -F c `
+        -b `
+        -v `
+        -f $BackupFile
 
     if (Test-Path $BackupFile) {
         $FileItem = Get-Item $BackupFile
         if ($FileItem.Length -eq 0) {
-            throw "Backup file is empty (0 KB). Auth likely failed."
+            throw "Backup file is empty (0 KB). Verification failed."
         }
 
         $Size = $FileItem.Length / 1MB
@@ -71,8 +72,9 @@ try {
 catch {
     Write-Host ""
     Write-Host "❌ Backup Failed: $($_.Exception.Message)" -ForegroundColor Red
-    Write-Host "Error details:" -ForegroundColor Red
-    Write-Host $_.ErrorDetails
+    if ($_.ErrorDetails) {
+        Write-Host "Error details: $($_.ErrorDetails)" -ForegroundColor Red
+    }
     exit 1
 }
 finally {
