@@ -87,29 +87,43 @@ jobs:
         shell: bash
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PGPASSWORD: ${{ secrets.PGPASSWORD }}
           PROJECT_REF: bxosgtiwjkpuguyggicm
         run: |
           set -euo pipefail
           
           echo "Testing pg_dump authentication..."
           
-          if [[ -z "${DATABASE_URL:-}" ]]; then
-            echo "No DATABASE_URL provided"
-            exit 1
+          # Test 1: Try with DATABASE_URL (project-qualified username)
+          if [[ -n "${DATABASE_URL:-}" ]]; then
+            echo "Test 1: Using DATABASE_URL with project-qualified username"
+            if pg_dump -Fc --file=/tmp/test.dump "${DATABASE_URL}" 2>/tmp/pg_dump_error.txt; then
+              rm -f /tmp/test.dump
+              echo "✓ AUTH_OK - DATABASE_URL works!"
+              exit 0
+            else
+              echo "✗ DATABASE_URL failed"
+              sed 's/:[^@]*@/:***@/g' /tmp/pg_dump_error.txt || cat /tmp/pg_dump_error.txt
+            fi
           fi
           
-          # Capture stderr to file (no secrets in output)
-          if pg_dump -Fc --file=/tmp/test.dump "${DATABASE_URL}" 2>/tmp/pg_dump_error.txt; then
-            rm -f /tmp/test.dump
-            echo "✓ AUTH_OK - pg_dump authentication successful"
+          # Test 2: Try with plain username (no project qualifier)
+          echo ""
+          echo "Test 2: Trying plain username without project qualifier"
+          PLAIN_URL="postgres://postgres@aws-1-eu-west-1.pooler.supabase.com:5432/postgres?sslmode=require"
+          
+          if pg_dump "${PLAIN_URL}" --format=custom --file=/tmp/test2.dump --no-owner --no-privileges 2>/tmp/pg_dump_error2.txt; then
+            rm -f /tmp/test2.dump
+            echo "✓ AUTH_OK - Plain username works!"
+            echo ""
+            echo "SUCCESS: Use plain username format (postgres, not postgres.PROJECT_REF)"
             exit 0
           else
-            rm -f /tmp/test.dump || true
-            echo "✗ AUTH_FAILED - pg_dump authentication failed"
+            rm -f /tmp/test2.dump || true
+            echo "✗ Plain username also failed"
             echo ""
-            echo "Error details (password masked):"
-            # Print error but mask the password
-            sed 's/:[^@]*@/:***@/g' /tmp/pg_dump_error.txt || cat /tmp/pg_dump_error.txt
+            echo "Error details:"
+            cat /tmp/pg_dump_error2.txt
             exit 1
           fi
 
