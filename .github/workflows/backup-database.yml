@@ -30,6 +30,8 @@ jobs:
       # Corrected step: Use project-qualified username format (postgres.PROJECT_REF)
       # User verified this works with correct password
       - name: Create Database Backup
+        env:
+          PGPASSWORD: ${{ secrets.PGPASSWORD }}
         run: |
           echo "Create backup directory..."
           mkdir -p backups
@@ -55,5 +57,3 @@ jobs:
           name: database-backup-${{ github.sha }}
           path: backups/*.dump
           retention-days: 30
-        env:
-          PGPASSWORD: ${{ secrets.PGPASSWORD }}
