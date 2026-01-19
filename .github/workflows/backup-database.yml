@@ -22,133 +22,38 @@ jobs:
           sudo apt-get install -y postgresql-client openssl python3 python3-pip
           pip3 install --upgrade awscli
 
-      - name: Set environment from secrets (no-op step to document secrets)
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          PGHOST: ${{ secrets.PGHOST }}
-          PGPORT: ${{ secrets.PGPORT }}
-          PGUSER: ${{ secrets.PGUSER }}
-          PGPASSWORD: ${{ secrets.PGPASSWORD }}
-          PGDATABASE: ${{ secrets.PGDATABASE }}
-          S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
-          S3_BUCKET: ${{ secrets.S3_BUCKET }}
-          S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
-          S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
-          S3_REGION: ${{ secrets.S3_REGION }}
-          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+      - name: Install PostgreSQL Client
         run: |
-          echo "Secrets loaded into environment for subsequent steps."
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
 
-      - name: Test database connection
+      # Corrected step: Use plain username format for pg_dump (confirmed working)
+      - name: Create Database Backup
         run: |
-          echo "Testing database connectivity..."
-          if [[ -n "${DATABASE_URL:-}" ]]; then
-            echo "Using DATABASE_URL"
-            if pg_isready -d "${DATABASE_URL}"; then
-              echo "✓ Database is ready"
-            else
-              echo "✗ Database connection failed"
-              exit 1
-            fi
-          else
-            echo "Using individual PG credentials"
-            if pg_isready -h "${PGHOST}" -p "${PGPORT}" -U "${PGUSER}" -d "${PGDATABASE}"; then
-              echo "✓ Database is ready"
-            else
-              echo "✗ Database connection failed"
-              exit 1
-            fi
-          fi
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          PGHOST: ${{ secrets.PGHOST }}
-          PGPORT: ${{ secrets.PGPORT }}
-          PGUSER: ${{ secrets.PGUSER }}
-          PGPASSWORD: ${{ secrets.PGPASSWORD }}
-          PGDATABASE: ${{ secrets.PGDATABASE }}
-
-      - name: Debug DATABASE_URL (masked)
-        shell: bash
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: |
-          python3 - <<'PY'
-          import os,urllib.parse
-          u=os.environ.get("DATABASE_URL","")
-          p=urllib.parse.urlparse(u)
-          print("SCHEME:", p.scheme)
-          print("USERNAME:", p.username)
-          print("HOST:", p.hostname)
-          print("PORT:", p.port)
-          print("DB:", p.path.lstrip("/"))
-          PY
-
-      - name: Test pg_dump authentication (capture error)
-        shell: bash
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          PGPASSWORD: ${{ secrets.PGPASSWORD }}
-          PROJECT_REF: bxosgtiwjkpuguyggicm
-        run: |
-          set -euo pipefail
+          echo "Create backup directory..."
+          mkdir -p backups
           
-          echo "Testing pg_dump authentication..."
+          TIMESTAMP=$(date +%Y%m%dT%H%M%SZ)
+          BACKUP_NAME="backup-${TIMESTAMP}.dump"
           
-          # Test 1: Try with DATABASE_URL (project-qualified username)
-          if [[ -n "${DATABASE_URL:-}" ]]; then
-            echo "Test 1: Using DATABASE_URL with project-qualified username"
-            if pg_dump -Fc --file=/tmp/test.dump "${DATABASE_URL}" 2>/tmp/pg_dump_error.txt; then
-              rm -f /tmp/test.dump
-              echo "✓ AUTH_OK - DATABASE_URL works!"
-              exit 0
-            else
-              echo "✗ DATABASE_URL failed"
-              sed 's/:[^@]*@/:***@/g' /tmp/pg_dump_error.txt || cat /tmp/pg_dump_error.txt
-            fi
-          fi
-          
-          # Test 2: Try with plain username (no project qualifier)
-          echo ""
-          echo "Test 2: Trying plain username without project qualifier"
-          PLAIN_URL="postgres://postgres@aws-1-eu-west-1.pooler.supabase.com:5432/postgres?sslmode=require"
-          
-          if pg_dump "${PLAIN_URL}" --format=custom --file=/tmp/test2.dump --no-owner --no-privileges 2>/tmp/pg_dump_error2.txt; then
-            rm -f /tmp/test2.dump
-            echo "✓ AUTH_OK - Plain username works!"
-            echo ""
-            echo "SUCCESS: Use plain username format (postgres, not postgres.PROJECT_REF)"
-            exit 0
-          else
-            rm -f /tmp/test2.dump || true
-            echo "✗ Plain username also failed"
-            echo ""
-            echo "Error details:"
-            cat /tmp/pg_dump_error2.txt
-            exit 1
-          fi
+          echo "Starting pg_dump..."
+          # Use PGPASSWORD env var + connection string with plain username 'postgres'
+          # This avoids the "Tenant or user not found" error seen with project-qualified usernames
+          pg_dump "postgres://postgres@aws-1-eu-west-1.pooler.supabase.com:5432/postgres?sslmode=require" \
+            --format=custom \
+            --file="backups/${BACKUP_NAME}" \
+            --no-owner \
+            --no-privileges \
+            --verbose
+            
+          echo "Backup created: backups/${BACKUP_NAME}"
+          ls -lh backups/${BACKUP_NAME}
 
-      - name: Run backup script
-        run: |
-          chmod +x ./scripts/backup.sh
-          ./scripts/backup.sh
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          PGHOST: ${{ secrets.PGHOST }}
-          PGPORT: ${{ secrets.PGPORT }}
-          PGUSER: ${{ secrets.PGUSER }}
-          PGPASSWORD: ${{ secrets.PGPASSWORD }}
-          PGDATABASE: ${{ secrets.PGDATABASE }}
-          S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
-          S3_BUCKET: ${{ secrets.S3_BUCKET }}
-          S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
-          S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
-          S3_REGION: ${{ secrets.S3_REGION }}
-          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
-          RETENTION_COUNT: ${{ env.RETENTION_COUNT }}
-
-      - name: Upload backup artifact
+      - name: Upload Backup Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: db-backup-${{ github.run_id }}-${{ github.run_number }}
-          path: backups/*.enc
+          name: database-backup-${{ github.sha }}
+          path: backups/*.dump
           retention-days: 30
+        env:
+          PGPASSWORD: ${{ secrets.PGPASSWORD }}

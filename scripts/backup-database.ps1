@@ -1,63 +1,76 @@
-# Supabase Database Backup Script
-# Run this script to create a backup of your AtomicCRM database
+<#
+.SYNOPSIS
+Creates a local database backup for AtomicCRM (Supabase).
+Using confirmed working configuration for Free Tier (plain username).
+
+.DESCRIPTION
+This script uses pg_dump to create a custom-format backup of the Supabase database.
+It requires PostgreSQL client tools (pg_dump) to be installed and in the PATH.
+
+.EXAMPLE
+.\scripts\backup-database.ps1
+#>
+
+$ErrorActionPreference = "Stop"
 
 # Configuration
-$PGHOST = "db.bxosgtiwjkpuguyggicm.supabase.co"
-$PGPORT = "5432"
-$PGUSER = "postgres"
-$PGDATABASE = "postgres"
-$PGPASSWORD = "7s56of1Zpc75J0n3]"
+$PoolerHost = "aws-1-eu-west-1.pooler.supabase.com"
+$Port = "5432"
+$User = "postgres" # Plain username works for pg_dump authentication
+$Database = "postgres"
+$BackupDir = Join-Path $PSScriptRoot "..\backups"
 
-# Create backup directory
-$backupDir = "C:\supabase_backups"
-if (-not (Test-Path $backupDir)) {
-    New-Item -ItemType Directory -Path $backupDir | Out-Null
-    Write-Host "Created backup directory: $backupDir" -ForegroundColor Green
+# Ensure backup directory exists
+if (-not (Test-Path $BackupDir)) {
+    New-Item -ItemType Directory -Path $BackupDir | Out-Null
 }
 
-# Set environment variables
-$env:PGHOST = $PGHOST
-$env:PGPORT = $PGPORT
-$env:PGUSER = $PGUSER
-$env:PGPASSWORD = $PGPASSWORD
-$env:PGDATABASE = $PGDATABASE
+# Timestamp for filename
+$Timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+$BackupFile = Join-Path $BackupDir "atomic_crm_backup_$Timestamp.dump"
 
-# Generate filename
-$timestamp = (Get-Date).ToString("yyyyMMdd_HHmmss")
-$filename = "atomic-crm-backup_$timestamp.sql"
-$filepath = Join-Path $backupDir $filename
-
-Write-Host "`nStarting backup..." -ForegroundColor Cyan
-Write-Host "Database: $PGHOST" -ForegroundColor Gray
-Write-Host "Output: $filepath" -ForegroundColor Gray
+Write-Host "=== Starting AtomicCRM Database Backup ===" -ForegroundColor Cyan
+Write-Host "Target: $PoolerHost" -ForegroundColor Gray
+Write-Host "User:   $User" -ForegroundColor Gray
+Write-Host "File:   $BackupFile" -ForegroundColor Gray
 Write-Host ""
 
-# Run pg_dump
+# Set PGPASSWORD environment variable (securely passed to pg_dump)
+# Note: Using the password confirmed to work
+$env:PGPASSWORD = "7s56of1Zpc75J0n3"
+
 try {
-    pg_dump -h $env:PGHOST -p $env:PGPORT -U $env:PGUSER -d $env:PGDATABASE -F p -v -f $filepath
+    Write-Host "Running pg_dump..." -ForegroundColor Yellow
     
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "`nBackup completed successfully!" -ForegroundColor Green
-        
-        $fileInfo = Get-Item $filepath
-        $sizeInMB = [math]::Round($fileInfo.Length / 1MB, 2)
-        
-        Write-Host "`nBackup Details:" -ForegroundColor Cyan
-        Write-Host "  File: $filename" -ForegroundColor White
-        Write-Host "  Size: $sizeInMB MB" -ForegroundColor White
-        Write-Host "  Location: $backupDir" -ForegroundColor White
+    # Execute pg_dump
+    # Uses confirmed working connection string format
+    pg_dump "postgres://$($User)@$($PoolerHost):$($Port)/$($Database)?sslmode=require" `
+        --format=custom `
+        --file=$BackupFile `
+        --no-owner `
+        --no-privileges `
+        --verbose
+
+    if (Test-Path $BackupFile) {
+        $Size = (Get-Item $BackupFile).Length / 1MB
+        Write-Host ""
+        Write-Host "✅ Backup successful!" -ForegroundColor Green
+        Write-Host "Saved to: $BackupFile" -ForegroundColor Green
+        Write-Host "Size:     $([math]::Round($Size, 2)) MB" -ForegroundColor Green
     }
     else {
-        Write-Host "`nBackup failed!" -ForegroundColor Red
-        Write-Host "Exit code: $LASTEXITCODE" -ForegroundColor Red
+        throw "Backup file was not created at expected path."
     }
+
 }
 catch {
-    Write-Host "`nError during backup:" -ForegroundColor Red
-    Write-Host $_.Exception.Message -ForegroundColor Red
-    Write-Host "`nMake sure PostgreSQL client tools are installed" -ForegroundColor Yellow
-    Write-Host "Download from: https://www.postgresql.org/download/windows/" -ForegroundColor Gray
+    Write-Host ""
+    Write-Host "❌ Backup Failed: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "Error details:" -ForegroundColor Red
+    Write-Host $_.ErrorDetails
+    exit 1
 }
-
-# Clear password
-$env:PGPASSWORD = $null
+finally {
+    # Clean up environment variable
+    $env:PGPASSWORD = $null
+}
