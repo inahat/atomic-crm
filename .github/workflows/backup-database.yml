@@ -18,14 +18,18 @@ jobs:
 
       - name: Install dependencies (awscli, pg tools)
         run: |
+          # Add PostgreSQL 17 Repo
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          sudo sh -c 'echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          
+          # Install dependencies
           sudo apt-get update
-          sudo apt-get install -y postgresql-client openssl python3 python3-pip
+          sudo apt-get install -y postgresql-client-17 openssl python3 python3-pip
           pip3 install --upgrade awscli
 
-      - name: Install PostgreSQL Client
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y postgresql-client
+      - name: Verify pg_dump version
+        run: pg_dump --version
 
       # Corrected step: Use project-qualified username format (postgres.PROJECT_REF)
       # User verified this works with correct password
