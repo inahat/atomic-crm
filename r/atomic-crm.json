@@ -336,7 +336,7 @@
     },
     {
       "path": "src/components/atomic-crm/providers/commons/canAccess.ts",
-      "content": "// FIXME: This should be exported from the ra-core package\ntype CanAccessParams<\n  RecordType extends Record<string, any> = Record<string, any>,\n> = {\n  action: string;\n  resource: string;\n  record?: RecordType;\n};\n\nexport const canAccess = <\n  RecordType extends Record<string, any> = Record<string, any>,\n>(\n  role: string,\n  params: CanAccessParams<RecordType>,\n) => {\n  if (role === \"admin\") {\n    return true;\n  }\n\n  // Non admins can't access the sales resource\n  if (params.resource === \"sales\") {\n    return false;\n  }\n\n  return true;\n};\n",
+      "content": "// FIXME: This should be exported from the ra-core package\ntype CanAccessParams<\n  RecordType extends Record<string, any> = Record<string, any>,\n> = {\n  action: string;\n  resource: string;\n  record?: RecordType;\n};\n\nexport const canAccess = <\n  RecordType extends Record<string, any> = Record<string, any>,\n>(\n  role: string,\n  params: CanAccessParams<RecordType>,\n) => {\n  if (role === \"admin\") {\n    return true;\n  }\n\n  // Non admins can't access the sales resource\n  if (params.resource === \"sales\") {\n    return false;\n  }\n\n  // Only admins can delete contacts, clients (companies), notes, and service contracts\n  if (\n    params.action === \"delete\" &&\n    [\n      \"contacts\",\n      \"companies\",\n      \"contactNotes\",\n      \"dealNotes\",\n      \"contracts\",\n    ].includes(params.resource)\n  ) {\n    return false;\n  }\n\n  return true;\n};\n",
       "type": "registry:component"
     },
     {
