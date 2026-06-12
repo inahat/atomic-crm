@@ -50,5 +50,10 @@ export const canAccess = <
     return false;
   }
 
+  // Non-admins cannot access or modify crm_settings (Organization details)
+  if (params.resource === "crm_settings" && role !== "admin") {
+    return false;
+  }
+
   return true;
 };

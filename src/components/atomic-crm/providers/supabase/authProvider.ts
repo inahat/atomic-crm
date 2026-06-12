@@ -42,7 +42,13 @@ export const authProvider: AuthProvider = {
     const result = await baseAuthProvider.login(params);
     // clear cached sale
     cachedSale = undefined;
+    cachedUserId = undefined;
     return result;
+  },
+  logout: async (params) => {
+    cachedSale = undefined;
+    cachedUserId = undefined;
+    return baseAuthProvider.logout(params);
   },
   checkAuth: async (params) => {
     // Users are on the set-password page, nothing to do
@@ -112,21 +118,27 @@ export const authProvider: AuthProvider = {
 };
 
 let cachedSale: any;
+let cachedUserId: string | undefined;
 const getSaleFromCache = async () => {
-  if (cachedSale != null) return cachedSale;
-
   const { data: dataSession, error: errorSession } =
     await supabase.auth.getSession();
 
   // Shouldn't happen after login but just in case
   if (dataSession?.session?.user == null || errorSession) {
+    cachedSale = undefined;
+    cachedUserId = undefined;
     return undefined;
+  }
+
+  const userId = dataSession.session.user.id;
+  if (cachedSale != null && cachedUserId === userId) {
+    return cachedSale;
   }
 
   const { data: dataSale, error: errorSale } = await supabase
     .from("sales")
     .select("id, first_name, last_name, avatar, administrator")
-    .match({ user_id: dataSession?.session?.user.id })
+    .match({ user_id: userId })
     .single();
 
   // Shouldn't happen either as all users are sales but just in case
@@ -135,5 +147,6 @@ const getSaleFromCache = async () => {
   }
 
   cachedSale = dataSale;
+  cachedUserId = userId;
   return dataSale;
 };

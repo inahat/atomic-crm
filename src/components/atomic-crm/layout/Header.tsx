@@ -1,6 +1,6 @@
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Settings, User } from "lucide-react";
-import { CanAccess } from "ra-core";
+import { CanAccess, useGetList } from "ra-core";
 import { Link, matchPath, useLocation } from "react-router";
 import { RefreshButton } from "@/components/admin/refresh-button";
 import { ThemeModeToggle } from "@/components/admin/theme-mode-toggle";
@@ -8,10 +8,14 @@ import { UserMenu } from "@/components/admin/user-menu";
 import { useUserMenu } from "@/hooks/user-menu-context";
 
 import { useConfigurationContext } from "../root/ConfigurationContext";
+import logoNoir from "../../../assets/Noir.png";
 
 const Header = () => {
   const { darkModeLogo, lightModeLogo, title } = useConfigurationContext();
   const location = useLocation();
+
+  const orgName = "Technology Simplified";
+  const orgLogo = logoNoir;
 
   let currentPath: string | boolean = "/";
   if (matchPath("/", location.pathname)) {
@@ -40,16 +44,11 @@ const Header = () => {
               className="flex items-center gap-2 text-secondary-foreground no-underline"
             >
               <img
-                className="[.light_&]:hidden h-6"
-                src={darkModeLogo}
-                alt={title}
+                className="h-6"
+                src={orgLogo}
+                alt={orgName}
               />
-              <img
-                className="[.dark_&]:hidden h-6"
-                src={lightModeLogo}
-                alt={title}
-              />
-              <h1 className="text-xl font-semibold">{title}</h1>
+              <h1 className="text-xl font-semibold">{orgName}</h1>
             </Link>
             <div>
               <nav className="flex">
@@ -79,9 +78,14 @@ const Header = () => {
                   isActive={currentPath === "/contracts"}
                 />
                 <NavigationTab
-                  label="Network"
-                  to="/device_events"
+                  label="OvrC"
+                  to="/device_events/reports"
                   isActive={currentPath === "/device_events"}
+                />
+                <NavigationTab
+                  label="Messages"
+                  to="/admin/conversations"
+                  isActive={location.pathname === "/admin/conversations"}
                 />
               </nav>
             </div>
@@ -143,12 +147,14 @@ const ConfigurationMenu = () => {
           My info
         </Link>
       </DropdownMenuItem>
-      <DropdownMenuItem asChild onClick={onClose}>
-        <Link to="/organization" className="flex items-center gap-2">
-          <Settings />
-          Organization
-        </Link>
-      </DropdownMenuItem>
+      <CanAccess resource="crm_settings" action="edit">
+        <DropdownMenuItem asChild onClick={onClose}>
+          <Link to="/organization" className="flex items-center gap-2">
+            <Settings />
+            Organization
+          </Link>
+        </DropdownMenuItem>
+      </CanAccess>
     </>
   );
 };
