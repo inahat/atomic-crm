@@ -22,5 +22,19 @@ export const canAccess = <
     return false;
   }
 
+  // Only admins can delete contacts, clients (companies), notes, and service contracts
+  if (
+    params.action === "delete" &&
+    [
+      "contacts",
+      "companies",
+      "contactNotes",
+      "dealNotes",
+      "contracts",
+    ].includes(params.resource)
+  ) {
+    return false;
+  }
+
   return true;
 };
