@@ -40,7 +40,7 @@ export default defineConfig({
         ),
       }
       : undefined,
-  base: "./",
+  base: process.env.VERCEL === "1" ? "/" : "./",
   esbuild: {
     keepNames: true,
   },
