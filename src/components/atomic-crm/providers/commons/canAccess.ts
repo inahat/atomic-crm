@@ -36,5 +36,10 @@ export const canAccess = <
     return false;
   }
 
+  // User deletion is not supported to avoid data loss; use account disabling instead
+  if (params.resource === "sales" && params.action === "delete") {
+    return false;
+  }
+
   return true;
 };
