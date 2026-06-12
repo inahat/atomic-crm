@@ -268,6 +268,12 @@ export const dataProvider = withLifecycleCallbacks(
         return data;
       },
       beforeDelete: async (params) => {
+        const userItem = localStorage.getItem(USER_STORAGE_KEY);
+        const localUser = userItem ? JSON.parse(userItem) : null;
+        if (localUser && String(params.id) === String(localUser.id)) {
+          throw new Error("You cannot delete your own admin account.");
+        }
+
         if (params.meta?.identity?.id == null) {
           throw new Error("Identity MUST be set in meta");
         }

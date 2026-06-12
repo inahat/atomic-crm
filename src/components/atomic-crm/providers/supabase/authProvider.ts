@@ -89,7 +89,7 @@ export const authProvider: AuthProvider = {
 
     // Compute access rights from the sale role
     const role = sale.administrator ? "admin" : "user";
-    return canAccess(role, params);
+    return canAccess(role, { ...params, currentUserId: sale.id });
   },
   getPermissions: async () => {
     const isInitialized = await getIsInitialized();

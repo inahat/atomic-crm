@@ -253,6 +253,34 @@ const dataProviderWithCustomMethods = {
 
     return data;
   },
+  async delete(resource: string, params: any) {
+    if (resource === "sales") {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: sale } = await supabase
+        .from("sales")
+        .select("id")
+        .eq("user_id", user?.id)
+        .single();
+      if (sale && params.id === sale.id) {
+        throw new Error("You cannot delete your own admin account.");
+      }
+    }
+    return baseDataProvider.delete(resource, params);
+  },
+  async deleteMany(resource: string, params: any) {
+    if (resource === "sales") {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: sale } = await supabase
+        .from("sales")
+        .select("id")
+        .eq("user_id", user?.id)
+        .single();
+      if (sale && params.ids.includes(sale.id)) {
+        throw new Error("You cannot delete your own admin account.");
+      }
+    }
+    return baseDataProvider.deleteMany(resource, params);
+  },
 } satisfies DataProvider;
 
 export type CrmDataProvider = typeof dataProviderWithCustomMethods;
@@ -379,6 +407,23 @@ export const dataProvider = withLifecycleCallbacks(
         return applyArrayFilters(paramsWithDate);
       },
     },
+    {
+      resource: "device_events",
+      beforeGetList: async (params) => {
+        console.log("dataProvider: device_events beforeGetList", params.filter);
+        const paramsWithSearch = applyFullTextSearch([
+          "device_name", "event_type", "description"
+        ])(params);
+        return applyDateFilters(paramsWithSearch);
+      },
+    },
+    {
+      resource: "service_tasks",
+      beforeGetList: async (params) => {
+        const paramsWithDate = applyDateFilters(params);
+        return applyArrayFilters(paramsWithDate);
+      },
+    }
   ],
 );
 
@@ -405,6 +450,7 @@ const applyFullTextSearch = (columns: string[]) => (params: GetListParams) => {
 const applyDateFilters = (params: GetListParams) => {
   if (!params.filter) return params;
 
+  console.log("applyDateFilters input:", params.filter);
   const newFilter = { ...params.filter };
   Object.keys(newFilter).forEach((key) => {
     if (key.endsWith("_lte")) {
@@ -417,7 +463,18 @@ const applyDateFilters = (params: GetListParams) => {
       newFilter[`${field}@gte`] = newFilter[key];
       delete newFilter[key];
     }
+    if (key.endsWith("_lt")) {
+      const field = key.replace("_lt", "");
+      newFilter[`${field}@lt`] = newFilter[key];
+      delete newFilter[key];
+    }
+    if (key.endsWith("_gt")) {
+      const field = key.replace("_gt", "");
+      newFilter[`${field}@gt`] = newFilter[key];
+      delete newFilter[key];
+    }
   });
+  console.log("applyDateFilters output:", newFilter);
   return { ...params, filter: newFilter };
 };
 
