@@ -139,7 +139,8 @@ export type DealNote = {
 } & Pick<RaRecord, "id">;
 
 export type ContractStatus =
-  | "Proposed"
+  | "Proposal"
+  | "Proposal-Sent"
   | "OPEN-UNBILLED"
   | "OPEN-BILLED"
   | "Approved"
@@ -156,10 +157,58 @@ export type Contract = {
   amount: number;
   site_address_id?: Identifier;
   billing_address_id?: Identifier;
+  content_structure?: any;
   included_hours?: number;
   contact_id?: Identifier;
   payment_frequency?: string;
   ovrc_url?: string;
+  /** @deprecated Use service_tasks table instead */
+  mid_year_service_status?: 'pending' | 'booked' | 'completed' | 'dismissed';
+  /** @deprecated Use service_tasks table instead */
+  end_year_service_status?: 'pending' | 'booked' | 'completed' | 'dismissed';
+  /** @deprecated Use service_tasks table instead */
+  mid_year_service_date?: string;
+  /** @deprecated Use service_tasks table instead */
+  end_year_service_date?: string;
+  /** @deprecated Use service_tasks table instead */
+  mid_year_service_report?: string;
+  /** @deprecated Use service_tasks table instead */
+  end_year_service_report?: string;
+} & Pick<RaRecord, "id">;
+
+export type ServiceTask = {
+  contract_id: Identifier;
+  service_type: 'mid-year' | 'end-of-year';
+  due_date: string;
+  status: 'pending' | 'booked' | 'completed' | 'dismissed';
+  booked_date?: string;
+  report?: string;
+  created_at?: string;
+  updated_at?: string;
+  contract_name?: string;
+  contract_number?: string;
+} & Pick<RaRecord, "id">;
+
+export type ServiceReport = {
+  service_task_id?: Identifier;
+  contract_id?: Identifier;
+  company_id: Identifier;
+  technician_id?: Identifier;
+  visit_date: string;
+  report_data: {
+    sections: Array<{
+      id: string;
+      title: string;
+      content: string;
+      notes?: string;
+      status?: "not-checked" | "checked" | "issue-found";
+    }>;
+    general_notes?: string;
+  };
+  status: "draft" | "completed";
+  report_number?: number;
+  created_at?: string;
+  updated_at?: string;
 } & Pick<RaRecord, "id">;
 
 export type Tag = {

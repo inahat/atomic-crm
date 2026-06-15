@@ -37,3 +37,24 @@ dist/
 
 # Shadcn Registry
 public/r/
+
+# Backups, dumps, logs and temp files
+*.log
+*.dump
+*.dump.sql
+backups/
+supabase_backup_*.sql
+supabase_backup_*.dump
+test_backup_*.dump
+*conversation.txt
+*check.txt
+unknown-contacts-report.txt
+webhook-output.txt
+heal-results.txt
+lines.json
+lines_utf8.json
+last_api_response.json
+2chat-messages-sample.txt
+count-lines.cjs
+count-lines.js
+

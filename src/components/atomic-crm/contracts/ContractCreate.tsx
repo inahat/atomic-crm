@@ -161,8 +161,8 @@ const ContractCreateContent = () => {
                 <SelectInput
                     source="status"
                     choices={[
-                        { id: "Proposed", name: "Proposed" },
-                        { id: "Proposed-Sent", name: "Proposed-Sent" },
+                        { id: "Proposal", name: "Proposal" },
+                        { id: "Proposal-Sent", name: "Proposal-Sent" },
                         { id: "Open-Unbilled", name: "Open-Unbilled" },
                         { id: "Open-Billed", name: "Open-Billed" },
                         { id: "Approved", name: "Approved" },

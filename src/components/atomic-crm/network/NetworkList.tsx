@@ -21,10 +21,32 @@ const statusChoices = [
     { id: 'Rebooting', name: 'Rebooting' },
 ];
 
+import { ExportButton } from "@/components/admin";
+import { Button } from "@/components/ui/button";
+import { BarChart3 } from "lucide-react";
+import { Link } from "react-router-dom";
+
+const NetworkListActions = () => (
+    <div className="flex w-full justify-end gap-2 mb-4">
+        <Button
+            variant="outline"
+            size="sm"
+            asChild
+        >
+            <Link to="/device_events/reports">
+                <BarChart3 className="mr-2 h-4 w-4" />
+                Reports
+            </Link>
+        </Button>
+        <ExportButton />
+    </div>
+);
+
 export const NetworkList = () => {
     const { permissions } = usePermissions();
     return (
         <List
+            actions={<NetworkListActions />}
             filters={[
                 <TextInput label="Device Name" source="device_name" alwaysOn />,
                 <SelectInput source="event_type" label="Status" choices={statusChoices} alwaysOn />,
@@ -32,7 +54,7 @@ export const NetworkList = () => {
                 <DateInput label="Occurred After" source="occurred_at_gte" />,
             ]}
             sort={{ field: "occurred_at", order: "DESC" }}
-            title="Network Command Center"
+            title="OvrC Command Center"
         >
             <DataTable
                 rowClick={false}

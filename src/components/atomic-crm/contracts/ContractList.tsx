@@ -24,7 +24,8 @@ export const ContractList = () => (
             <CheckboxGroupInput
                 source="status"
                 choices={[
-                    { id: 'Proposed', name: 'Proposed' },
+                    { id: 'Proposal', name: 'Proposal' },
+                    { id: 'Proposal-Sent', name: 'Proposal-Sent' },
                     { id: 'Open-Unbilled', name: 'Open-Unbilled' },
                     { id: 'Open-Billed', name: 'Open-Billed' },
                     { id: 'Approved', name: 'Approved' },
@@ -35,7 +36,7 @@ export const ContractList = () => (
                 row
             />
         ]}
-        filterDefaultValues={{ status: ['Open-Unbilled', 'Open-Billed', 'Approved'] }}
+        filterDefaultValues={{ status: ['Proposal', 'Proposal-Sent', 'Open-Unbilled', 'Open-Billed', 'Approved'] }}
         sort={{ field: "expiry_date", order: "ASC" }}
         perPage={50}
     >
@@ -48,10 +49,10 @@ export const ContractList = () => (
                 </ReferenceField>
             </DataTable.Col>
             <DataTable.Col source="start_date">
-                <DateField source="start_date" />
+                <DateField source="start_date" locales="en-GB" />
             </DataTable.Col>
             <DataTable.Col source="expiry_date">
-                <DateField source="expiry_date" />
+                <DateField source="expiry_date" locales="en-GB" />
             </DataTable.Col>
             <DataTable.NumberCol
                 source="amount"

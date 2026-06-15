@@ -18,8 +18,11 @@ import { OAuthConsentPage } from "@/components/supabase/oauth-consent-page";
 import { CompanyAddressCreate, CompanyAddressEdit } from "../companies/CompanyAddress";
 import { ContactCompanyCreate } from "../contact_companies/ContactCompanyCreate";
 import { NetworkDashboard } from "../network/NetworkDashboard";
+import { NetworkReports } from "../network/NetworkReports";
 import { ContractBuilder } from "../contracts/ContractBuilder";
 import { OrganizationSettings } from "../settings/OrganizationSettings";
+import WhatsAppPage from "../whatsapp/WhatsAppPage";
+import { ServiceReportEditor } from "../reports/ServiceReportEditor";
 
 import companies from "../companies";
 import contacts from "../contacts";
@@ -165,6 +168,9 @@ export const CRM = ({
         <CustomRoutes>
           <Route path={SettingsPage.path} element={<SettingsPage />} />
           <Route path="/contracts/:id/builder" element={<ContractBuilder />} />
+          <Route path="/service_tasks/:taskId/report" element={<ServiceReportEditor />} />
+          <Route path="/companies/:companyId/service_reports/create" element={<ServiceReportEditor />} />
+          <Route path="/service_reports/:reportId" element={<ServiceReportEditor />} />
         </CustomRoutes>
         <Resource name="deals" {...deals} />
         <Resource name="contacts" {...contacts} />
@@ -178,6 +184,7 @@ export const CRM = ({
         <Resource name="contracts" {...contracts} />
 
         <Resource name="contract_snippets" {...contracts.snippets} options={{ label: "Contract Atoms" }} />
+        <Resource name="service_reports" />
         <Resource name="crm_settings" />
         <CustomRoutes>
           <Route path="/organization" element={<OrganizationSettings />} />
@@ -190,11 +197,17 @@ export const CRM = ({
         <Resource
           name="device_events"
           list={NetworkDashboard}
-          options={{ label: "Network Command Center" }}
+          options={{ label: "OvrC Command Center" }}
         />
+        <CustomRoutes>
+          <Route path="/device_events/reports" element={<NetworkReports />} />
+        </CustomRoutes>
+        <CustomRoutes>
+          <Route path="/admin/conversations" element={<WhatsAppPage />} />
+        </CustomRoutes>
         <Resource name="tags" />
       </Admin>
       <AIChatWidget />
-    </ConfigurationProvider>
+    </ConfigurationProvider >
   );
 };

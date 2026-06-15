@@ -50,6 +50,27 @@ async function expressAdapter(req: Request, res: Response) {
 
 app.post('/api/chat', expressAdapter);
 
+app.post('/api/whatsapp/send', async (req, res) => {
+    try {
+        console.log(`[${new Date().toISOString()}] POST ${req.url}`);
+        const { POST } = await import('./api/whatsapp/send/route');
+
+        // Construct Request object
+        const webReq = new Request(`http://localhost:3000${req.originalUrl}`, {
+            method: 'POST',
+            headers: req.headers as unknown as HeadersInit,
+            body: JSON.stringify(req.body) // req.body is already parsed by express.json()
+        });
+
+        const response = await POST(webReq);
+        const data = await response.json();
+        res.status(response.status).json(data);
+    } catch (e: any) {
+        console.error("WhatsApp Route Error:", e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
 const PORT = 3000;
 console.log(`AI Server running on http://localhost:${PORT}`);
 console.log(`API Key Status: ${process.env.GOOGLE_GENERATIVE_AI_API_KEY ? "Found" : "MISSING"}`);

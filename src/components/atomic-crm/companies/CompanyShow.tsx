@@ -1,15 +1,16 @@
 import { format, formatDistance } from "date-fns";
-import { UserPlus } from "lucide-react";
+import { UserPlus, FileText, Trash2 } from "lucide-react";
 import {
   RecordContextProvider,
   ShowBase,
   useListContext,
   useRecordContext,
   useShowContext,
+  useDelete,
+  useNotify,
 } from "ra-core";
 import {
   Link as RouterLink,
-  useLocation,
   useMatch,
   useNavigate,
 } from "react-router-dom";
@@ -18,7 +19,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ReferenceManyField } from "@/components/admin/reference-many-field";
 import { ReferenceField } from "@/components/admin/reference-field";
-import { SortButton } from "@/components/admin/sort-button";
 
 import { ActivityLog } from "../activity/ActivityLog";
 import { Avatar } from "../contacts/Avatar";
@@ -65,23 +65,20 @@ const CompanyShowContent = () => {
               <h5 className="text-xl ml-2 flex-1">{record.name}</h5>
             </div>
             <Tabs defaultValue={currentTab} onValueChange={handleTabChange}>
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="activity">Activity</TabsTrigger>
                 <TabsTrigger value="contacts">
                   {record.nb_contacts
                     ? record.nb_contacts === 1
-                      ? "1 Contact"
-                      : `${record.nb_contacts} Contacts`
-                    : "No Contacts"}
+                      ? "Contacts (1)"
+                      : `Contacts (${record.nb_contacts})`
+                    : "Contacts (0)"}
                 </TabsTrigger>
-                {record.nb_deals ? (
-                  <TabsTrigger value="deals">
-                    {record.nb_deals === 1
-                      ? "1 deal"
-                      : `${record.nb_deals} deals`}
-                  </TabsTrigger>
-                ) : null}
+                <TabsTrigger value="deals">
+                  Deals ({record.nb_deals || 0})
+                </TabsTrigger>
                 <TabsTrigger value="contracts">Contracts</TabsTrigger>
+                <TabsTrigger value="service_history">Service History</TabsTrigger>
               </TabsList>
               <TabsContent value="activity" className="pt-2">
                 <ActivityLog companyId={record.id} context="company" />
@@ -119,6 +116,25 @@ const CompanyShowContent = () => {
                 >
                   <ContractsIterator />
                 </ReferenceManyField>
+              </TabsContent>
+              <TabsContent value="service_history">
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-row justify-end space-x-2 mt-1">
+                    <Button variant="outline" size="sm" asChild>
+                      <RouterLink to={`/companies/${record.id}/service_reports/create`}>
+                        <FileText className="h-4 w-4 mr-2" />
+                        New Call-out Report
+                      </RouterLink>
+                    </Button>
+                  </div>
+                  <ReferenceManyField
+                    reference="service_reports"
+                    target="company_id"
+                    sort={{ field: "visit_date", order: "DESC" }}
+                  >
+                    <ReportsIterator />
+                  </ReferenceManyField>
+                </div>
               </TabsContent>
             </Tabs>
           </CardContent>
@@ -267,10 +283,11 @@ const ContractsIterator = () => {
             </div>
             <span className={`px-2 py-1 rounded-full text-xs font-semibold uppercase tracking-wide 
                 ${contract.status === 'Approved' ? 'bg-green-100 text-green-800' : ''}
-                ${contract.status === 'Proposed' ? 'bg-blue-100 text-blue-800' : ''}
+                ${contract.status === 'Proposal' ? 'bg-blue-100 text-blue-800' : ''}
+                ${contract.status === 'Proposal-Sent' ? 'bg-indigo-100 text-indigo-800' : ''}
                 ${contract.status === 'Rejected' ? 'bg-red-100 text-red-800' : ''}
                 ${contract.status === 'Open' ? 'bg-yellow-100 text-yellow-800' : ''}
-                ${!['Approved', 'Rejected', 'Open', 'Proposed'].includes(contract.status) ? 'bg-gray-100 text-gray-800' : ''}
+                ${!['Approved', 'Rejected', 'Open', 'Proposal', 'Proposal-Sent'].includes(contract.status) ? 'bg-gray-100 text-gray-800' : ''}
             `}>
               {contract.status}
             </span>
@@ -282,6 +299,66 @@ const ContractsIterator = () => {
           <RouterLink to="/contracts/create">Add Contract</RouterLink>
         </Button>
       </div>
+    </div>
+  );
+};
+
+const ReportsIterator = () => {
+  const { data: reports, error, isPending } = useListContext<any>();
+  const [deleteOne] = useDelete();
+  const notify = useNotify();
+
+  if (isPending || error || !reports) return null;
+
+  const handleDelete = (e: React.MouseEvent, id: string) => {
+    e.preventDefault();
+    if (window.confirm("Are you sure you want to delete this report? This action cannot be undone.")) {
+      deleteOne('service_reports', { id }, {
+        onSuccess: () => notify('Service report deleted successfully', { type: 'success' }),
+        onError: (error: any) => notify(`Error deleting report: ${error?.message || 'Unknown error'}`, { type: 'error' })
+      });
+    }
+  };
+
+  if (reports.length === 0) return (
+    <div className="text-sm text-muted-foreground p-4">No service reports found</div>
+  );
+
+  return (
+    <div className="flex flex-col">
+      {reports.map((report: any) => (
+        <RouterLink
+          key={report.id}
+          to={`/service_reports/${report.id}`}
+          className="flex justify-between items-center p-3 hover:bg-muted/50 rounded-md transition-colors group"
+        >
+          <div className="flex flex-col gap-0.5">
+            <div className="font-medium text-sm">
+              {report.status === 'draft' ? '[DRAFT] ' : ''}{report.report_data?.subtitle || 'Service Visit Report'}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Visit Date: {format(new Date(report.visit_date), 'PP')}
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <span className={`px-2 py-1 rounded-full text-xs font-semibold uppercase tracking-wide 
+                            ${report.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}
+                        `}>
+              {report.status}
+            </span>
+            <FileText className="h-4 w-4 text-muted-foreground" />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={(e) => handleDelete(e, report.id)}
+              title="Delete Report"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </RouterLink>
+      ))}
     </div>
   );
 };

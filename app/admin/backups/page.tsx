@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { createClient } from '@supabase/supabase-js';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../src/components/ui/card';
+import { Button } from '../../../src/components/ui/button';
 import { Download, RefreshCw, Trash2, Database } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -19,7 +19,10 @@ export default function BackupsPage() {
     const [backups, setBackups] = useState<Backup[]>([]);
     const [loading, setLoading] = useState(true);
     const [downloading, setDownloading] = useState<string | null>(null);
-    const supabase = createClient();
+    const supabase = createClient(
+        import.meta.env.VITE_SUPABASE_URL,
+        import.meta.env.VITE_SUPABASE_ANON_KEY
+    );
 
     useEffect(() => {
         loadBackups();
@@ -31,11 +34,18 @@ export default function BackupsPage() {
 
         if (data) {
             const sorted = data
-                .filter(file => file.name.endsWith('.sql'))
-                .sort((a, b) =>
+                .filter((file: any) => file.name.endsWith('.sql'))
+                .sort((a: any, b: any) =>
                     new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-                );
-            setBackups(sorted as Backup[]);
+                )
+                .map((file: any) => ({
+                    name: file.name,
+                    created_at: file.created_at,
+                    metadata: {
+                        size: file.metadata?.size || 0
+                    }
+                }));
+            setBackups(sorted);
         }
 
         if (error) {

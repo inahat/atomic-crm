@@ -117,13 +117,13 @@ export const ContractDocument = ({ data }: { data: ContractData }) => (
                 <View style={styles.row}>
                     <Text style={styles.label}>Start Date:</Text>
                     <Text style={styles.value}>
-                        {data.start_date ? format(new Date(data.start_date), "PP") : "N/A"}
+                        {data.start_date ? format(new Date(data.start_date), "dd/MM/yyyy") : "N/A"}
                     </Text>
                 </View>
                 <View style={styles.row}>
                     <Text style={styles.label}>End Date:</Text>
                     <Text style={styles.value}>
-                        {data.expiry_date ? format(new Date(data.expiry_date), "PP") : "N/A"}
+                        {data.expiry_date ? format(new Date(data.expiry_date), "dd/MM/yyyy") : "N/A"}
                     </Text>
                 </View>
                 {data.amount && (
