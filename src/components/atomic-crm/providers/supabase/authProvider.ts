@@ -51,6 +51,23 @@ export const authProvider: AuthProvider = {
     return baseAuthProvider.logout(params);
   },
   checkAuth: async (params) => {
+    // If the URL hash contains access_token and type=recovery or type=invite,
+    // redirect the user to the set-password page.
+    if (window.location.hash) {
+      const hashStr = window.location.hash.startsWith("#")
+        ? window.location.hash.substring(1)
+        : window.location.hash;
+      const urlParams = new URLSearchParams(hashStr);
+      const type = urlParams.get("type");
+      const accessToken = urlParams.get("access_token");
+      const refreshToken = urlParams.get("refresh_token");
+
+      if (accessToken && (type === "recovery" || type === "invite")) {
+        window.location.hash = `#/set-password?access_token=${accessToken}&refresh_token=${refreshToken || ""}`;
+        return;
+      }
+    }
+
     // Users are on the set-password page, nothing to do
     if (
       window.location.pathname === "/set-password" ||
