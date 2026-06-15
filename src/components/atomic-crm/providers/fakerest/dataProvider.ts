@@ -226,6 +226,48 @@ const dataProviderWithCustomMethod: CrmDataProvider = {
   mergeContacts: async (sourceId: Identifier, targetId: Identifier) => {
     return mergeContacts(sourceId, targetId, baseDataProvider);
   },
+  delete: async (resource: string, params: any) => {
+    const userItem = localStorage.getItem(USER_STORAGE_KEY);
+    const localUser = userItem ? JSON.parse(userItem) : null;
+
+    if (
+      ["contacts", "companies", "contracts", "contactNotes", "dealNotes"].includes(
+        resource
+      )
+    ) {
+      if (!localUser || !localUser.administrator) {
+        throw new Error("You do not have permission to delete this resource.");
+      }
+    }
+
+    if (resource === "sales") {
+      if (localUser && String(params.id) === String(localUser.id)) {
+        throw new Error("You cannot delete your own admin account.");
+      }
+    }
+    return baseDataProvider.delete(resource, params);
+  },
+  deleteMany: async (resource: string, params: any) => {
+    const userItem = localStorage.getItem(USER_STORAGE_KEY);
+    const localUser = userItem ? JSON.parse(userItem) : null;
+
+    if (
+      ["contacts", "companies", "contracts", "contactNotes", "dealNotes"].includes(
+        resource
+      )
+    ) {
+      if (!localUser || !localUser.administrator) {
+        throw new Error("You do not have permission to delete these resources.");
+      }
+    }
+
+    if (resource === "sales") {
+      if (localUser && params.ids.map(String).includes(String(localUser.id))) {
+        throw new Error("You cannot delete your own admin account.");
+      }
+    }
+    return baseDataProvider.deleteMany(resource, params);
+  },
 };
 
 async function updateCompany(

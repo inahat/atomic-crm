@@ -1,5 +1,5 @@
-import { required, useGetList } from 'ra-core';
-import { Edit, Create, SimpleForm, TextInput, Loading } from '@/components/admin';
+import { required, useGetList, useCanAccess, useRedirect } from 'ra-core';
+import { Edit, Create, SimpleForm, TextInput } from '@/components/admin';
 import { Typography } from '@mui/material';
 
 // Custom Toolbar to hide Delete button - If we really need it, we should implement it using standard HTML/Tailwind or just accept the default for now.
@@ -9,10 +9,21 @@ import { Typography } from '@mui/material';
 // Let's keep it simple.
 
 export const OrganizationSettings = () => {
+    const redirect = useRedirect();
+    const { canAccess, isPending: isAccessPending } = useCanAccess({
+        resource: 'crm_settings',
+        action: 'edit',
+    });
+
     // We fetch the list to find the first ID, since we're assuming Singleton
     const { data, isPending } = useGetList('crm_settings', { pagination: { page: 1, perPage: 1 } });
 
-    if (isPending) return null; // Or <Loading />
+    if (isAccessPending || isPending) return null; // Or <Loading />
+
+    if (!canAccess) {
+        redirect('/');
+        return null;
+    }
 
     const id = data?.[0]?.id;
 

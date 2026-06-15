@@ -254,13 +254,24 @@ const dataProviderWithCustomMethods = {
     return data;
   },
   async delete(resource: string, params: any) {
+    const { data: { user } } = await supabase.auth.getUser();
+    const { data: sale } = await supabase
+      .from("sales")
+      .select("id, administrator")
+      .eq("user_id", user?.id)
+      .single();
+
+    if (
+      ["contacts", "companies", "contracts", "contactNotes", "dealNotes"].includes(
+        resource
+      )
+    ) {
+      if (!sale || !sale.administrator) {
+        throw new Error("You do not have permission to delete this resource.");
+      }
+    }
+
     if (resource === "sales") {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data: sale } = await supabase
-        .from("sales")
-        .select("id")
-        .eq("user_id", user?.id)
-        .single();
       if (sale && params.id === sale.id) {
         throw new Error("You cannot delete your own admin account.");
       }
@@ -268,13 +279,24 @@ const dataProviderWithCustomMethods = {
     return baseDataProvider.delete(resource, params);
   },
   async deleteMany(resource: string, params: any) {
+    const { data: { user } } = await supabase.auth.getUser();
+    const { data: sale } = await supabase
+      .from("sales")
+      .select("id, administrator")
+      .eq("user_id", user?.id)
+      .single();
+
+    if (
+      ["contacts", "companies", "contracts", "contactNotes", "dealNotes"].includes(
+        resource
+      )
+    ) {
+      if (!sale || !sale.administrator) {
+        throw new Error("You do not have permission to delete these resources.");
+      }
+    }
+
     if (resource === "sales") {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data: sale } = await supabase
-        .from("sales")
-        .select("id")
-        .eq("user_id", user?.id)
-        .single();
       if (sale && params.ids.includes(sale.id)) {
         throw new Error("You cannot delete your own admin account.");
       }

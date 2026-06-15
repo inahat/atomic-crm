@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Trash } from "lucide-react";
 import type { RaRecord, UseBulkDeleteControllerParams } from "ra-core";
-import { Translate, useBulkDeleteController } from "ra-core";
+import { Translate, useBulkDeleteController, useCanAccess, useResourceContext } from "ra-core";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 
@@ -19,7 +19,7 @@ import type { ReactNode } from "react";
  * export const PostList = () => (
  *   <List>
  *     <DataTable
- *       bulkActionsButtons={
+ *       bulkActionsButtons = {
  *         <>
  *           <BulkExportButton />
  *           <BulkDeleteButton />
@@ -40,7 +40,17 @@ export const BulkDeleteButton = <
   className,
   ...props
 }: BulkDeleteButtonProps<RecordType, MutationOptionsError>) => {
+  const resource = useResourceContext(props);
+  const { canAccess, isPending: isAccessPending } = useCanAccess({
+    resource: props.resource || resource,
+    action: "delete",
+  });
+
   const { handleDelete, isPending } = useBulkDeleteController(props);
+
+  if (isAccessPending || !canAccess) {
+    return null;
+  }
 
   return (
     <Button

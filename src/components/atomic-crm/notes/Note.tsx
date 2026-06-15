@@ -6,6 +6,7 @@ import {
   useResourceContext,
   useUpdate,
   WithRecord,
+  useCanAccess,
 } from "ra-core";
 import { useState } from "react";
 import type { FieldValues, SubmitHandler } from "react-hook-form";
@@ -39,6 +40,12 @@ export const Note = ({
   const [isEditing, setEditing] = useState(false);
   const resource = useResourceContext();
   const notify = useNotify();
+
+  const { canAccess } = useCanAccess({
+    resource,
+    action: "delete",
+    record: note,
+  });
 
   const [update, { isPending }] = useUpdate();
 
@@ -125,23 +132,25 @@ export const Note = ({
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleDelete}
-                  className="p-1 h-auto cursor-pointer"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Delete note</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          {canAccess && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleDelete}
+                    className="p-1 h-auto cursor-pointer"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Delete note</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </span>
         <div className="flex-1"></div>
         <span className="text-sm text-muted-foreground">

@@ -10,6 +10,7 @@ import {
   useRecordContext,
   useResourceContext,
   useTranslate,
+  useCanAccess,
 } from "ra-core";
 
 export type DeleteButtonProps = {
@@ -61,6 +62,12 @@ export const DeleteButton = (props: DeleteButtonProps) => {
   const record = useRecordContext(props);
   const resource = useResourceContext(props);
 
+  const { canAccess, isPending: isAccessPending } = useCanAccess({
+    resource: props.resource || resource,
+    action: "delete",
+    record,
+  });
+
   const { isPending, handleDelete } = useDeleteWithUndoController({
     record,
     resource,
@@ -69,6 +76,11 @@ export const DeleteButton = (props: DeleteButtonProps) => {
     mutationOptions,
     successMessage,
   });
+
+  if (isAccessPending || !canAccess) {
+    return null;
+  }
+
   const translate = useTranslate();
   const getRecordRepresentation = useGetRecordRepresentation(resource);
   let recordRepresentation = getRecordRepresentation(record);
