@@ -210,7 +210,14 @@ export const ServiceReportEditor = () => {
     return (
         <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 1000, mx: 'auto' }}>
             <GlobalStyles styles={{
+                '@page': {
+                    margin: '12mm 15mm'
+                },
                 '@media print': {
+                    '*': {
+                        WebkitPrintColorAdjust: 'exact !important',
+                        printColorAdjust: 'exact !important'
+                    },
                     'nav, header, footer, .MuiButton-root, .MuiIconButton-root, .ra-notification': {
                         display: 'none !important'
                     },
