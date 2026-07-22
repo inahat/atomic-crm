@@ -95,27 +95,27 @@ const ContractCreateContent = () => {
                         <ReferenceInput
                             source="site_address_id"
                             reference="company_addresses"
-                            filter={{ company_id: formData.company_id, address_type: 'Site' }}
-                            enableGetChoices={() => !!formData.company_id}
+                            filter={{ company_id: formData?.company_id, address_type: 'Site' }}
+                            enableGetChoices={() => !!formData?.company_id}
                         >
                             <SelectInput
                                 label="Site Address"
                                 optionText="address_line_1"
                                 className="flex-1"
-                                disabled={!formData.company_id}
+                                disabled={!formData?.company_id}
                             />
                         </ReferenceInput>
                         <ReferenceInput
                             source="billing_address_id"
                             reference="company_addresses"
-                            filter={{ company_id: formData.company_id, address_type: 'Billing' }}
-                            enableGetChoices={() => !!formData.company_id}
+                            filter={{ company_id: formData?.company_id, address_type: 'Billing' }}
+                            enableGetChoices={() => !!formData?.company_id}
                         >
                             <SelectInput
                                 label="Billing Address"
                                 optionText="address_line_1"
                                 className="flex-1"
-                                disabled={!formData.company_id}
+                                disabled={!formData?.company_id}
                             />
                         </ReferenceInput>
                     </div>
@@ -126,14 +126,14 @@ const ContractCreateContent = () => {
                     <ReferenceInput
                         source="contact_id"
                         reference="contacts"
-                        filter={{ company_id: formData.company_id }}
-                        enableGetChoices={() => !!formData.company_id}
+                        filter={{ company_id: formData?.company_id }}
+                        enableGetChoices={() => !!formData?.company_id}
                     >
                         <SelectInput
                             label="Contact"
-                            optionText={(record) => `${record.first_name} ${record.last_name}`}
+                            optionText={(record) => record ? `${record.first_name || ''} ${record.last_name || ''}`.trim() : ''}
                             className="w-full"
-                            disabled={!formData.company_id}
+                            disabled={!formData?.company_id}
                         />
                     </ReferenceInput>
                 )}
