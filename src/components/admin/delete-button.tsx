@@ -77,10 +77,6 @@ export const DeleteButton = (props: DeleteButtonProps) => {
     successMessage,
   });
 
-  if (isAccessPending || !canAccess) {
-    return null;
-  }
-
   const translate = useTranslate();
   const getRecordRepresentation = useGetRecordRepresentation(resource);
   let recordRepresentation = getRecordRepresentation(record);
@@ -107,6 +103,10 @@ export const DeleteButton = (props: DeleteButtonProps) => {
     },
     userText: labelProp,
   });
+
+  if (isAccessPending || !canAccess) {
+    return null;
+  }
 
   return (
     <Button
