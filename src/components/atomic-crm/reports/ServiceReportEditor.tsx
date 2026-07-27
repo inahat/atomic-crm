@@ -211,7 +211,7 @@ export const ServiceReportEditor = () => {
         <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 1000, mx: 'auto' }}>
             <GlobalStyles styles={{
                 '@page': {
-                    margin: '12mm 15mm'
+                    margin: 0
                 },
                 '@media print': {
                     '*': {
@@ -222,7 +222,7 @@ export const ServiceReportEditor = () => {
                         display: 'none !important'
                     },
                     'main': {
-                        padding: '0 !important',
+                        padding: '12mm 15mm !important',
                         margin: '0 !important',
                         maxWidth: '100% !important'
                     },

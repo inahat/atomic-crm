@@ -10,7 +10,14 @@ import { X } from 'lucide-react';
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
 const GLOBAL_PRINT_STYLES = `
+@page {
+    margin: 0;
+}
 @media print {
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
     body * {
         visibility: hidden;
     }
@@ -23,12 +30,8 @@ const GLOBAL_PRINT_STYLES = `
         top: 0;
         width: 100%;
         margin: 0;
-        padding: 0;
+        padding: 12mm 15mm !important;
         box-shadow: none !important;
-    }
-    @page {
-        size: auto;
-        margin: 20mm;
     }
     .snippet-controls {
         display: none !important;
