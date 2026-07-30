@@ -1,8 +1,6 @@
-import { createContext, useContext } from "react";
+import { UserMenuContext } from "ra-core";
+import { useContext } from "react";
 
-/**
- * @deprecated Use UserMenuContextValue from `ra-core` once available.
- */
 export type UserMenuContextValue = {
   /**
    * Closes the user menu
@@ -11,14 +9,8 @@ export type UserMenuContextValue = {
   onClose: () => void;
 };
 
-/**
- * @deprecated Use UserMenuContext from `ra-core` once available.
- */
-export const UserMenuContext = createContext<UserMenuContextValue | undefined>(
-  undefined,
-);
+export const useUserMenu = (): UserMenuContextValue => {
+  const context = useContext(UserMenuContext);
+  return context ?? { onClose: () => {} };
+};
 
-/**
- * @deprecated Use useUserMenu from `ra-core` once available.
- */
-export const useUserMenu = () => useContext(UserMenuContext);
