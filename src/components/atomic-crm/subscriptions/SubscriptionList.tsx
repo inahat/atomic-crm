@@ -22,13 +22,14 @@ import {
 import { Subscription, Company, SubscriptionType } from "../types";
 import { SUBSCRIPTION_TYPES, SubscriptionCreateModal } from "./SubscriptionCreateModal";
 import { SubscriptionEditModal } from "./SubscriptionEditModal";
+import { RenewSubscriptionModal } from "./RenewSubscriptionModal";
 
 export const SubscriptionList = () => {
     const notify = useNotify();
-    const [updateSubscription] = useUpdate();
 
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingSubscription, setEditingSubscription] = useState<Subscription | null>(null);
+    const [renewingSubscription, setRenewingSubscription] = useState<{ subscription: Subscription; companyName?: string } | null>(null);
 
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedTypeFilter, setSelectedTypeFilter] = useState<string>("ALL");
@@ -51,30 +52,9 @@ export const SubscriptionList = () => {
         return map;
     }, [companies]);
 
-    // Quick renew handler
-    const handleQuickRenew = async (sub: Subscription) => {
-        const current = sub.renewal_date ? new Date(sub.renewal_date) : new Date();
-        current.setFullYear(current.getFullYear() + 1);
-        const newDate = current.toISOString().split("T")[0];
-
-        try {
-            await new Promise((resolve, reject) => {
-                updateSubscription(
-                    "subscriptions",
-                    {
-                        id: sub.id,
-                        data: { ...sub, renewal_date: newDate, status: "Active", updated_at: new Date().toISOString() },
-                        previousData: sub
-                    },
-                    { onSuccess: resolve, onError: reject }
-                );
-            });
-
-            notify(`Renewed "${sub.title}" to ${newDate}`, { type: "info" });
-            refetch();
-        } catch (err: any) {
-            notify(`Error renewing: ${err.message}`, { type: "error" });
-        }
+    // Quick renew handler trigger
+    const handleQuickRenew = (sub: Subscription, clientName: string) => {
+        setRenewingSubscription({ subscription: sub, companyName: clientName });
     };
 
     // Filter logic
@@ -313,7 +293,7 @@ export const SubscriptionList = () => {
                                 size="sm"
                                 variant="outline"
                                 className="h-8 gap-1 text-xs text-indigo-600 border-indigo-200 hover:bg-indigo-50"
-                                onClick={() => handleQuickRenew(sub)}
+                                onClick={() => handleQuickRenew(sub, clientName)}
                               >
                                 <CheckCircle2 className="h-3.5 w-3.5" />
                                 Renew +1yr
@@ -350,6 +330,15 @@ export const SubscriptionList = () => {
             subscription={editingSubscription}
             isOpen={!!editingSubscription}
             onClose={() => setEditingSubscription(null)}
+            onSuccess={refetch}
+          />
+
+          {/* Renew Modal */}
+          <RenewSubscriptionModal
+            subscription={renewingSubscription?.subscription || null}
+            companyName={renewingSubscription?.companyName}
+            isOpen={!!renewingSubscription}
+            onClose={() => setRenewingSubscription(null)}
             onSuccess={refetch}
           />
         </div>

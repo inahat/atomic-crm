@@ -1,15 +1,16 @@
-import { useMemo } from "react";
-import { useGetList, useUpdate, useNotify } from "ra-core";
+import { useState, useMemo } from "react";
+import { useGetList, useNotify } from "ra-core";
 import { format, differenceInDays } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Repeat, AlertCircle, Calendar, CheckCircle2, ArrowRight, Building2 } from "lucide-react";
 import { Link } from "react-router";
 import { Subscription, Company } from "../types";
+import { RenewSubscriptionModal } from "../subscriptions/RenewSubscriptionModal";
 
 export const SubscriptionRenewalsWidget = () => {
     const notify = useNotify();
-    const [updateSubscription] = useUpdate();
+    const [renewingSubscription, setRenewingSubscription] = useState<{ subscription: Subscription; companyName?: string } | null>(null);
 
     const { data: subscriptions = [], refetch } = useGetList<Subscription>("subscriptions", {
         pagination: { page: 1, perPage: 1000 },
@@ -55,29 +56,9 @@ export const SubscriptionRenewalsWidget = () => {
         };
     }, [subscriptions]);
 
-    const handleQuickRenew = async (sub: Subscription) => {
-        const current = sub.renewal_date ? new Date(sub.renewal_date) : new Date();
-        current.setFullYear(current.getFullYear() + 1);
-        const newDate = current.toISOString().split("T")[0];
-
-        try {
-            await new Promise((resolve, reject) => {
-                updateSubscription(
-                    "subscriptions",
-                    {
-                        id: sub.id,
-                        data: { ...sub, renewal_date: newDate, status: "Active", updated_at: new Date().toISOString() },
-                        previousData: sub
-                    },
-                    { onSuccess: resolve, onError: reject }
-                );
-            });
-
-            notify(`Renewed "${sub.title}" to ${newDate}`, { type: "info" });
-            refetch();
-        } catch (err: any) {
-            notify(`Error renewing: ${err.message}`, { type: "error" });
-        }
+    // Quick renew handler trigger
+    const handleQuickRenew = (sub: Subscription, clientName: string) => {
+        setRenewingSubscription({ subscription: sub, companyName: clientName });
     };
 
     return (
@@ -174,7 +155,7 @@ export const SubscriptionRenewalsWidget = () => {
                                     <Button
                                         size="sm"
                                         className="h-7 text-xs bg-rose-600 hover:bg-rose-700 text-white font-semibold gap-1"
-                                        onClick={() => handleQuickRenew(sub)}
+                                        onClick={() => handleQuickRenew(sub, clientName)}
                                     >
                                         <CheckCircle2 className="h-3.5 w-3.5" />
                                         Renew
@@ -219,7 +200,7 @@ export const SubscriptionRenewalsWidget = () => {
                                         size="sm"
                                         variant="outline"
                                         className="h-7 text-xs border-amber-300 text-amber-700 hover:bg-amber-100 gap-1 font-semibold"
-                                        onClick={() => handleQuickRenew(sub)}
+                                        onClick={() => handleQuickRenew(sub, clientName)}
                                     >
                                         <CheckCircle2 className="h-3.5 w-3.5" />
                                         Renew
@@ -230,6 +211,14 @@ export const SubscriptionRenewalsWidget = () => {
                     })}
                 </div>
             )}
+
+            <RenewSubscriptionModal
+                subscription={renewingSubscription?.subscription || null}
+                companyName={renewingSubscription?.companyName}
+                isOpen={!!renewingSubscription}
+                onClose={() => setRenewingSubscription(null)}
+                onSuccess={refetch}
+            />
         </div>
     );
 };
