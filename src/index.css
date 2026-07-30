@@ -194,3 +194,27 @@ input[type="time"] {
     @apply bg-background text-foreground;
   }
 }
+
+/* Print styling enhancements for PDF generation */
+@media print {
+  @page {
+    margin: 12mm;
+    size: auto;
+  }
+
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  /* Force hide all modals, overlays, and popovers during print */
+  [data-slot="dialog-overlay"],
+  [data-slot="dialog-portal"],
+  [role="dialog"],
+  div[data-radix-portal] {
+    display: none !important;
+    visibility: hidden !important;
+  }
+}

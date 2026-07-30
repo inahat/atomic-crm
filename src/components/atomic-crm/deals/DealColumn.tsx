@@ -8,27 +8,32 @@ import { DealCard } from "./DealCard";
 export const DealColumn = ({
   stage,
   deals,
+  onOpenCreateClient,
+  onGenerateContract
 }: {
   stage: string;
   deals: Deal[];
+  onOpenCreateClient?: (deal: Deal) => void;
+  onGenerateContract?: (deal: Deal) => void;
 }) => {
-  const totalAmount = deals.reduce((sum, deal) => sum + deal.amount, 0);
+  const totalAmount = deals.reduce((sum, deal) => sum + (Number(deal.amount) || 0), 0);
+
+  const formatGBP = (val: number) =>
+    new Intl.NumberFormat("en-GB", {
+      style: "currency",
+      currency: "GBP",
+      maximumFractionDigits: 0
+    }).format(val);
 
   const { dealStages } = useConfigurationContext();
   return (
-    <div className="flex-1 pb-8">
-      <div className="flex flex-col items-center">
-        <h3 className="text-base font-medium">
-          {findDealLabel(dealStages, stage)}
+    <div className="flex-1 pb-8 min-w-[220px]">
+      <div className="flex flex-col items-center border-b pb-2 mb-2">
+        <h3 className="text-sm font-semibold">
+          {findDealLabel(dealStages, stage)} ({deals.length})
         </h3>
-        <p className="text-sm text-muted-foreground">
-          {totalAmount.toLocaleString("en-US", {
-            notation: "compact",
-            style: "currency",
-            currency: "USD",
-            currencyDisplay: "narrowSymbol",
-            minimumSignificantDigits: 3,
-          })}
+        <p className="text-xs text-muted-foreground font-mono font-medium">
+          {formatGBP(totalAmount)}
         </p>
       </div>
       <Droppable droppableId={stage}>
@@ -36,12 +41,18 @@ export const DealColumn = ({
           <div
             ref={droppableProvided.innerRef}
             {...droppableProvided.droppableProps}
-            className={`flex flex-col rounded-2xl mt-2 gap-2 ${
-              snapshot.isDraggingOver ? "bg-muted" : ""
+            className={`flex flex-col rounded-xl p-1 min-h-[300px] gap-2 transition-colors ${
+              snapshot.isDraggingOver ? "bg-muted/70 ring-1 ring-primary/20" : ""
             }`}
           >
             {deals.map((deal, index) => (
-              <DealCard key={deal.id} deal={deal} index={index} />
+              <DealCard
+                key={deal.id}
+                deal={deal}
+                index={index}
+                onOpenCreateClient={onOpenCreateClient}
+                onGenerateContract={onGenerateContract}
+              />
             ))}
             {droppableProvided.placeholder}
           </div>

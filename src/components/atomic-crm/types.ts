@@ -125,6 +125,11 @@ export type Deal = {
   expected_closing_date: string;
   sales_id: Identifier;
   index: number;
+  lead_contact_name?: string;
+  lead_contact_email?: string;
+  payment_frequency?: string;
+  isContractRecord?: boolean;
+  originalContractId?: Identifier;
 } & Pick<RaRecord, "id">;
 
 export type DealNote = {
@@ -297,3 +302,26 @@ export interface ContactGender {
   label: string;
   icon: ComponentType<{ className?: string }>;
 }
+
+export type SubscriptionType =
+  | 'Control4 4Sight'
+  | 'Re:Sure'
+  | '2n Intercom'
+  | 'Security'
+  | 'Fire';
+
+export interface Subscription extends RaRecord {
+  id: Identifier;
+  company_id: Identifier;
+  contact_id?: Identifier;
+  subscription_type: SubscriptionType | string;
+  title: string;
+  amount: number;
+  billing_frequency: string;
+  renewal_date: string;
+  status: 'Active' | 'Pending Renewal' | 'Renewed' | 'Cancelled' | string;
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+

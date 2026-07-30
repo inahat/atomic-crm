@@ -1,10 +1,10 @@
 import { useGetList } from "ra-core";
 
 import { Contact, ContactNote } from "../types";
-import { AIChat } from "@/components/AIChat";
 import { ContractExpiringSoon } from "../contracts/ContractExpiringSoon";
 import { ServiceReminders } from "../contracts/ServiceReminders";
-import { DashboardActivityLog } from "./DashboardActivityLog";
+import { MidYearInvoicingReminders } from "../contracts/MidYearInvoicingReminders";
+import { SubscriptionRenewalsWidget } from "./SubscriptionRenewalsWidget";
 import { DashboardStepper } from "./DashboardStepper";
 import { DealsChart } from "./DealsChart";
 
@@ -52,6 +52,8 @@ export const Dashboard = () => {
         <div className="flex flex-col gap-6">
           {import.meta.env.VITE_IS_DEMO === "true" ? <Welcome /> : null}
           {totalDeal ? <DealsChart /> : null}
+          <SubscriptionRenewalsWidget />
+          <MidYearInvoicingReminders />
           <ServiceReminders />
         </div>
       </div>

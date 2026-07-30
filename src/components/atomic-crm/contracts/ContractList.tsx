@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import {
     DataTable,
     DateField,
@@ -9,64 +10,90 @@ import {
     DateInput,
     CheckboxGroupInput,
 } from "@/components/admin";
-import { Link as LinkIcon } from "lucide-react";
+import { Link as LinkIcon, BarChart3, ListFilter } from "lucide-react";
 import { useRecordContext } from "ra-core";
-
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { ContractStatus } from "./ContractStatus";
+import { ContractReportsDashboard } from "../contract-reports";
 
-// Using basic List for now
-export const ContractList = () => (
-    <List
-        filters={[
-            <TextInput label="Search" source="q" alwaysOn />,
-            <DateInput label="Expiring Before" source="expiry_date_lte" alwaysOn />,
-            <CheckboxGroupInput
-                source="status"
-                choices={[
-                    { id: 'Proposal', name: 'Proposal' },
-                    { id: 'Proposal-Sent', name: 'Proposal-Sent' },
-                    { id: 'Open-Unbilled', name: 'Open-Unbilled' },
-                    { id: 'Open-Billed', name: 'Open-Billed' },
-                    { id: 'Approved', name: 'Approved' },
-                    { id: 'Rejected', name: 'Rejected' },
-                    { id: 'VIP', name: 'VIP' },
-                ]}
-                alwaysOn
-                row
-            />
-        ]}
-        filterDefaultValues={{ status: ['Proposal', 'Proposal-Sent', 'Open-Unbilled', 'Open-Billed', 'Approved'] }}
-        sort={{ field: "expiry_date", order: "ASC" }}
-        perPage={50}
-    >
-        <DataTable rowClick="edit" bulkActionButtons={false}>
-            <DataTable.Col source="contract_number" label="No." />
-            <DataTable.Col source="contract_name" />
-            <DataTable.Col label="Client" source="company_id">
-                <ReferenceField source="company_id" reference="companies">
-                    <TextField source="name" />
-                </ReferenceField>
-            </DataTable.Col>
-            <DataTable.Col source="start_date">
-                <DateField source="start_date" locales="en-GB" />
-            </DataTable.Col>
-            <DataTable.Col source="expiry_date">
-                <DateField source="expiry_date" locales="en-GB" />
-            </DataTable.Col>
-            <DataTable.NumberCol
-                source="amount"
-                options={{ style: 'currency', currency: 'GBP' }}
-            />
-            <DataTable.Col label="Status" source="status">
-                <ContractStatus source="status" />
-            </DataTable.Col>
-            <DataTable.Col label="OvrC" source="ovrc_url">
-                <OvrCLinkField source="ovrc_url" />
-            </DataTable.Col>
-        </DataTable>
-    </List>
-);
+export const ContractList = () => {
+    const [activeTab, setActiveTab] = useState<string>("list");
+
+    return (
+        <div className="space-y-2">
+            <div className="flex items-center justify-between px-4 pt-2">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-auto">
+                    <TabsList className="grid grid-cols-2 w-[300px]">
+                        <TabsTrigger value="list" className="flex items-center gap-1.5 text-xs">
+                            <ListFilter className="h-3.5 w-3.5" />
+                            All Contracts
+                        </TabsTrigger>
+                        <TabsTrigger value="analytics" className="flex items-center gap-1.5 text-xs">
+                            <BarChart3 className="h-3.5 w-3.5" />
+                            Analytics & Reports
+                        </TabsTrigger>
+                    </TabsList>
+                </Tabs>
+            </div>
+
+            {activeTab === "analytics" ? (
+                <ContractReportsDashboard />
+            ) : (
+                <List
+                    filters={[
+                        <TextInput label="Search" source="q" alwaysOn key="q" />,
+                        <DateInput label="Expiring Before" source="expiry_date_lte" alwaysOn key="exp" />,
+                        <CheckboxGroupInput
+                            key="status"
+                            source="status"
+                            choices={[
+                                { id: 'Proposal', name: 'Proposal' },
+                                { id: 'Proposal-Sent', name: 'Proposal-Sent' },
+                                { id: 'Open-Unbilled', name: 'Open-Unbilled' },
+                                { id: 'Open-Billed', name: 'Open-Billed' },
+                                { id: 'Approved', name: 'Approved' },
+                                { id: 'Rejected', name: 'Rejected' },
+                                { id: 'VIP', name: 'VIP' },
+                            ]}
+                            alwaysOn
+                            row
+                        />
+                    ]}
+                    filterDefaultValues={{ status: ['Proposal', 'Proposal-Sent', 'Open-Unbilled', 'Open-Billed', 'Approved'] }}
+                    sort={{ field: "expiry_date", order: "ASC" }}
+                    perPage={50}
+                >
+                    <DataTable rowClick="edit" bulkActionButtons={false}>
+                        <DataTable.Col source="contract_number" label="No." />
+                        <DataTable.Col source="contract_name" />
+                        <DataTable.Col label="Client" source="company_id">
+                            <ReferenceField source="company_id" reference="companies">
+                                <TextField source="name" />
+                            </ReferenceField>
+                        </DataTable.Col>
+                        <DataTable.Col source="start_date">
+                            <DateField source="start_date" locales="en-GB" />
+                        </DataTable.Col>
+                        <DataTable.Col source="expiry_date">
+                            <DateField source="expiry_date" locales="en-GB" />
+                        </DataTable.Col>
+                        <DataTable.NumberCol
+                            source="amount"
+                            options={{ style: 'currency', currency: 'GBP' }}
+                        />
+                        <DataTable.Col label="Status" source="status">
+                            <ContractStatus source="status" />
+                        </DataTable.Col>
+                        <DataTable.Col label="OvrC" source="ovrc_url">
+                            <OvrCLinkField source="ovrc_url" />
+                        </DataTable.Col>
+                    </DataTable>
+                </List>
+            )}
+        </div>
+    );
+};
 
 
 const OvrCLinkField = ({ source }: { source: string }) => {

@@ -18,4 +18,5 @@ export interface Db {
   sales: Sale[];
   tags: Tag[];
   tasks: Task[];
+  subscriptions: any[];
 }

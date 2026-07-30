@@ -3,7 +3,7 @@ import { Mars, NonBinary, Venus } from "lucide-react";
 export const defaultDarkModeLogo = "./logos/logo_atomic_crm_dark.svg";
 export const defaultLightModeLogo = "./logos/logo_atomic_crm_light.svg";
 
-export const defaultTitle = "Atomic CRM";
+export const defaultTitle = "ih - Support";
 
 export const defaultCompanySectors = [
   "Communication Services",
@@ -20,22 +20,18 @@ export const defaultCompanySectors = [
 ];
 
 export const defaultDealStages = [
-  { value: "opportunity", label: "Opportunity" },
-  { value: "proposal-sent", label: "Proposal Sent" },
-  { value: "in-negociation", label: "In Negotiation" },
-  { value: "won", label: "Won" },
-  { value: "lost", label: "Lost" },
-  { value: "delayed", label: "Delayed" },
+  { value: "opportunity", label: "Opportunity (Proposed)" },
+  { value: "proposal", label: "Proposal" },
+  { value: "proposal-sent", label: "Proposal Sent (In Negotiations)" },
+  { value: "won", label: "Won (Approved)" },
+  { value: "lost", label: "Lost (Rejected)" },
 ];
 
 export const defaultDealPipelineStatuses = ["won"];
 
 export const defaultDealCategories = [
-  "Other",
-  "Copywriting",
-  "Print project",
-  "UI Design",
-  "Website design",
+  "Service Agreement",
+  "Project",
 ];
 
 export const defaultNoteStatuses = [

@@ -1,200 +1,228 @@
 import { ResponsiveBar } from "@nivo/bar";
-import { format, startOfMonth } from "date-fns";
-import { DollarSign } from "lucide-react";
+import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
+import { PoundSterling } from "lucide-react";
 import { useGetList } from "ra-core";
 import { memo, useMemo } from "react";
 
-import type { Deal } from "../types";
+import type { Deal, Contract } from "../types";
 
-const multiplier = {
-  opportunity: 0.2,
-  "proposal-sent": 0.5,
-  "in-negociation": 0.8,
-  delayed: 0.3,
-};
-
-const threeMonthsAgo = new Date(
-  new Date().setMonth(new Date().getMonth() - 6),
-).toISOString();
-
-const DEFAULT_LOCALE = "en-US";
-const CURRENCY = "USD";
+const DEFAULT_LOCALE = "en-GB";
+const CURRENCY = "GBP";
 
 export const DealsChart = memo(() => {
   const acceptedLanguages = navigator
     ? navigator.languages || [navigator.language]
     : [DEFAULT_LOCALE];
 
-  const { data, isPending } = useGetList<Deal>("deals", {
-    pagination: { perPage: 100, page: 1 },
-    sort: {
-      field: "created_at",
-      order: "ASC",
-    },
-    filter: {
-      "created_at@gte": threeMonthsAgo,
-    },
-  });
-  const months = useMemo(() => {
-    if (!data) return [];
-    const dealsByMonth = data.reduce((acc, deal) => {
-      const month = startOfMonth(deal.created_at ?? new Date()).toISOString();
-      if (!acc[month]) {
-        acc[month] = [];
-      }
-      acc[month].push(deal);
-      return acc;
-    }, {} as any);
+  // Fetch last 3 months of deals & contracts
+  const now = new Date();
 
-    const amountByMonth = Object.keys(dealsByMonth).map((month) => {
+  const { data: deals = [], isPending: isDealsPending } = useGetList<Deal>("deals", {
+    pagination: { perPage: 1000, page: 1 },
+    sort: { field: "created_at", order: "ASC" },
+  });
+
+  const { data: contracts = [], isPending: isContractsPending } = useGetList<Contract>("contracts", {
+    pagination: { perPage: 1000, page: 1 },
+    sort: { field: "start_date", order: "ASC" },
+  });
+
+  // Build 3 discrete calendar month buckets (e.g., May, Jun, Jul)
+  const monthBuckets = useMemo(() => {
+    const buckets = [];
+    for (let i = 2; i >= 0; i--) {
+      const monthStart = startOfMonth(subMonths(now, i));
+      const monthEnd = endOfMonth(monthStart);
+      buckets.push({
+        label: format(monthStart, "MMM yyyy"),
+        shortLabel: format(monthStart, "MMM"),
+        start: monthStart,
+        end: monthEnd,
+      });
+    }
+    return buckets;
+  }, [now]);
+
+  const chartData = useMemo(() => {
+    // Set of contract keys to deduplicate deals converted into contracts
+    const contractKeys = new Set(
+      contracts.map((c) => `${c.company_id}_${(c.contract_name || "").toLowerCase().trim()}`)
+    );
+
+    return monthBuckets.map((bucket) => {
+      let proposalSentSum = 0;
+      let wonSum = 0;
+      let lostSum = 0;
+
+      // 1. Process Service Contracts originating strictly from the proposal/lead pipeline
+      contracts.forEach((c) => {
+        const contractDate = c.start_date ? new Date(c.start_date) : new Date();
+        if (isWithinInterval(contractDate, { start: bucket.start, end: bucket.end })) {
+          const statusLower = (c.status || "").trim().toLowerCase();
+          const val = Number(c.amount) || 0;
+
+          // Check if contract originated from the proposal lead pipeline:
+          // - Is currently a proposal (proposal, proposal-sent, proposed, opportunity)
+          // - OR has matching lead deal in deals table
+          // - OR has lead metadata in description text
+          const isProposalOrigin =
+            statusLower === "proposal" ||
+            statusLower === "proposal-sent" ||
+            statusLower === "proposed" ||
+            statusLower === "opportunity" ||
+            ((c as any).description && (c as any).description.includes("[Lead Contact:")) ||
+            deals.some(
+              (d) =>
+                d.company_id === c.company_id &&
+                d.name.toLowerCase().trim() === (c.contract_name || "").toLowerCase().trim()
+            );
+
+          if (statusLower === "approved" || statusLower === "won") {
+            // ONLY count approved if it originated from a proposal pipeline (excluding open-billed -> approved)
+            if (isProposalOrigin) {
+              wonSum += val;
+            }
+          } else if (statusLower === "rejected" || statusLower === "lost") {
+            if (isProposalOrigin) {
+              lostSum += val;
+            }
+          } else if (
+            statusLower === "proposal-sent" ||
+            statusLower === "proposal" ||
+            statusLower === "proposed" ||
+            statusLower === "opportunity"
+          ) {
+            proposalSentSum += val;
+          }
+          // Note: Contracts moving from Open-Billed/Unbilled -> Approved without a proposal origin are excluded
+        }
+      });
+
+      // 2. Process Deals (avoiding duplicates if converted to a contract)
+      deals.forEach((deal) => {
+        const dealDate = deal.created_at ? new Date(deal.created_at) : new Date();
+        if (isWithinInterval(dealDate, { start: bucket.start, end: bucket.end })) {
+          if (deal.company_id) {
+            const key = `${deal.company_id}_${deal.name.toLowerCase().trim()}`;
+            if (contractKeys.has(key)) return;
+          }
+
+          const stageLower = (deal.stage || "").trim().toLowerCase();
+          const val = Number(deal.amount) || 0;
+
+          if (stageLower === "won" || stageLower === "approved") {
+            wonSum += val;
+          } else if (stageLower === "lost" || stageLower === "rejected") {
+            lostSum += val;
+          } else if (
+            stageLower === "proposal-sent" ||
+            stageLower === "proposal" ||
+            stageLower === "opportunity" ||
+            stageLower === "proposed"
+          ) {
+            proposalSentSum += val;
+          }
+        }
+      });
+
       return {
-        date: format(month, "MMM"),
-        won: dealsByMonth[month]
-          .filter((deal: Deal) => deal.stage === "won")
-          .reduce((acc: number, deal: Deal) => {
-            acc += deal.amount;
-            return acc;
-          }, 0),
-        pending: dealsByMonth[month]
-          .filter((deal: Deal) => !["won", "lost"].includes(deal.stage))
-          .reduce((acc: number, deal: Deal) => {
-            // @ts-expect-error - multiplier type issue
-            acc += deal.amount * multiplier[deal.stage];
-            return acc;
-          }, 0),
-        lost: dealsByMonth[month]
-          .filter((deal: Deal) => deal.stage === "lost")
-          .reduce((acc: number, deal: Deal) => {
-            acc -= deal.amount;
-            return acc;
-          }, 0),
+        month: bucket.shortLabel,
+        "Proposals Sent": proposalSentSum,
+        "Won (Approved)": wonSum,
+        "Lost (Rejected)": lostSum,
       };
     });
+  }, [monthBuckets, deals, contracts]);
 
-    return amountByMonth;
-  }, [data]);
+  if (isDealsPending || isContractsPending) return null;
 
-  if (isPending) return null; // FIXME return skeleton instead
-  const range = months.reduce(
-    (acc, month) => {
-      acc.min = Math.min(acc.min, month.lost);
-      acc.max = Math.max(acc.max, month.won + month.pending);
-      return acc;
-    },
-    { min: 0, max: 0 },
+  // Compute maximum height dynamically for scaling
+  const maxVal = Math.max(
+    ...chartData.map((d) =>
+      Math.max(d["Proposals Sent"], d["Won (Approved)"], d["Lost (Rejected)"])
+    ),
+    1000
   );
+
   return (
-    <div className="flex flex-col">
-      <div className="flex items-center mb-4">
-        <div className="mr-3 flex">
-          <DollarSign className="text-muted-foreground w-6 h-6" />
+    <div className="flex flex-col bg-card p-4 rounded-xl border shadow-sm">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <div className="p-2 rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400">
+            <PoundSterling className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-base font-bold tracking-tight">
+              Pipeline Performance (Last 3 Months)
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Proposals sent & approved/rejected won proposals (excluding open-billed contracts).
+            </p>
+          </div>
         </div>
-        <h2 className="text-xl font-semibold text-muted-foreground">
-          Upcoming Deal Revenue
-        </h2>
+
+        {/* Legend */}
+        <div className="flex items-center gap-4 text-xs font-medium">
+          <div className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded-full bg-indigo-500 inline-block" />
+            <span>Proposals Sent</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block" />
+            <span>Won (Approved)</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded-full bg-rose-500 inline-block" />
+            <span>Lost (Rejected)</span>
+          </div>
+        </div>
       </div>
-      <div className="h-[400px]">
+
+      <div className="h-[360px] w-full">
         <ResponsiveBar
-          data={months}
-          indexBy="date"
-          keys={["won", "pending", "lost"]}
-          colors={["#61cdbb", "#97e3d5", "#e25c3b"]}
-          margin={{ top: 30, right: 50, bottom: 30, left: 0 }}
-          padding={0.3}
+          data={chartData}
+          indexBy="month"
+          keys={["Proposals Sent", "Won (Approved)", "Lost (Rejected)"]}
+          groupMode="grouped"
+          colors={["#6366f1", "#10b981", "#ef4444"]}
+          margin={{ top: 20, right: 30, bottom: 40, left: 60 }}
+          padding={0.25}
+          innerPadding={4}
           valueScale={{
             type: "linear",
-            min: range.min * 1.2,
-            max: range.max * 1.2,
+            min: 0,
+            max: maxVal * 1.15,
           }}
           indexScale={{ type: "band", round: true }}
-          enableGridX={true}
-          enableGridY={false}
+          enableGridX={false}
+          enableGridY={true}
           enableLabel={false}
-          tooltip={({ value, indexValue }) => (
-            <div className="p-2 bg-secondary rounded shadow inline-flex items-center gap-1 text-secondary-foreground">
-              <strong>{indexValue}: </strong>&nbsp;{value > 0 ? "+" : ""}
-              {value.toLocaleString(acceptedLanguages.at(0) ?? DEFAULT_LOCALE, {
-                style: "currency",
-                currency: CURRENCY,
-              })}
+          tooltip={({ id, value, indexValue, color }) => (
+            <div className="p-2.5 bg-popover text-popover-foreground border rounded-lg shadow-md text-xs flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }} />
+              <div>
+                <span className="font-semibold">{indexValue} - {id}:</span>{" "}
+                <span className="font-bold text-foreground">
+                  {value.toLocaleString(acceptedLanguages.at(0) ?? DEFAULT_LOCALE, {
+                    style: "currency",
+                    currency: CURRENCY,
+                    maximumFractionDigits: 0,
+                  })}
+                </span>
+              </div>
             </div>
           )}
-          axisTop={{
+          axisTop={null}
+          axisLeft={{
             tickSize: 0,
-            tickPadding: 12,
-            style: {
-              ticks: {
-                text: {
-                  fill: "var(--color-muted-foreground)",
-                },
-              },
-              legend: {
-                text: {
-                  fill: "var(--color-muted-foreground)",
-                },
-              },
-            },
+            tickPadding: 8,
+            format: (v: any) => `£${Number(v).toLocaleString()}`,
           }}
           axisBottom={{
-            legendPosition: "middle",
-            legendOffset: 50,
             tickSize: 0,
-            tickPadding: 12,
-            style: {
-              ticks: {
-                text: {
-                  fill: "var(--color-muted-foreground)",
-                },
-              },
-              legend: {
-                text: {
-                  fill: "var(--color-muted-foreground)",
-                },
-              },
-            },
+            tickPadding: 10,
           }}
-          axisLeft={null}
-          axisRight={{
-            format: (v: any) => `${Math.abs(v / 1000)}k`,
-            tickValues: 8,
-            style: {
-              ticks: {
-                text: {
-                  fill: "var(--color-muted-foreground)",
-                },
-              },
-              legend: {
-                text: {
-                  fill: "var(--color-muted-foreground)",
-                },
-              },
-            },
-          }}
-          markers={
-            [
-              {
-                axis: "y",
-                value: 0,
-                lineStyle: { strokeOpacity: 0 },
-                textStyle: { fill: "#2ebca6" },
-                legend: "Won",
-                legendPosition: "top-left",
-                legendOrientation: "vertical",
-              },
-              {
-                axis: "y",
-                value: 0,
-                lineStyle: {
-                  stroke: "#f47560",
-                  strokeWidth: 1,
-                },
-                textStyle: { fill: "#e25c3b" },
-                legend: "Lost",
-                legendPosition: "bottom-left",
-                legendOrientation: "vertical",
-              },
-            ] as any
-          }
+          axisRight={null}
         />
       </div>
     </div>

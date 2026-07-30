@@ -27,6 +27,7 @@ import { ServiceReportEditor } from "../reports/ServiceReportEditor";
 import companies from "../companies";
 import contacts from "../contacts";
 import contracts from "../contracts";
+import subscriptions from "../subscriptions";
 import { Dashboard } from "../dashboard/Dashboard";
 import deals from "../deals";
 import { Layout } from "../layout/Layout";
@@ -182,6 +183,7 @@ export const CRM = ({
         />
         <Resource name="companies" {...companies} options={{ label: "Clients" }} />
         <Resource name="contracts" {...contracts} />
+        <Resource name="subscriptions" {...subscriptions} />
 
         <Resource name="contract_snippets" {...contracts.snippets} options={{ label: "Contract Atoms" }} />
         <Resource name="service_reports" />

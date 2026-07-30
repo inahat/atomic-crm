@@ -21,10 +21,10 @@ import { CRM } from "@/components/atomic-crm/root/CRM";
  * const App = () => (
  *    <CRM
  *       logo="./img/logo.png"
- *       title="Acme CRM"
+ *       title="ih - Support"
  *    />
  * );
  */
-const App = () => <CRM />;
+const App = () => <CRM title="ih - Support" />;
 
 export default App;

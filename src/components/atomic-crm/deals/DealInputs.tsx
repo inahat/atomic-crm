@@ -33,11 +33,11 @@ const DealInfoInputs = () => {
     <div className="flex flex-col gap-4 flex-1">
       <TextInput
         source="name"
-        label="Deal name"
+        label="Lead / Agreement Title"
         validate={required()}
         helperText={false}
       />
-      <TextInput source="description" multiline rows={3} helperText={false} />
+      <TextInput source="description" label="Service Notes & Description" multiline rows={3} helperText={false} />
     </div>
   );
 };
@@ -45,14 +45,14 @@ const DealInfoInputs = () => {
 const DealLinkedToInputs = () => {
   return (
     <div className="flex flex-col gap-4 flex-1">
-      <h3 className="text-base font-medium">Linked to</h3>
+      <h3 className="text-base font-medium">Linked Client Profile</h3>
       <ReferenceInput source="company_id" reference="companies">
-        <AutocompleteCompanyInput validate={required()} />
+        <AutocompleteCompanyInput label="Client Company (Optional)" />
       </ReferenceInput>
 
       <ReferenceArrayInput source="contact_ids" reference="contacts_summary">
         <AutocompleteArrayInput
-          label="Contacts"
+          label="Linked Contacts"
           optionText={contactOptionText}
           helperText={false}
         />
@@ -65,7 +65,7 @@ const DealMiscInputs = () => {
   const { dealStages, dealCategories } = useConfigurationContext();
   return (
     <div className="flex flex-col gap-4 flex-1">
-      <h3 className="text-base font-medium">Misc</h3>
+      <h3 className="text-base font-medium">Agreement / Lead Details</h3>
 
       <SelectInput
         source="category"
@@ -74,10 +74,12 @@ const DealMiscInputs = () => {
           id: type,
           name: type,
         }))}
+        defaultValue="Service Agreement"
         helperText={false}
       />
       <NumberInput
         source="amount"
+        label="Est. Net Amount (£)"
         defaultValue={0}
         helperText={false}
         validate={required()}
@@ -85,11 +87,13 @@ const DealMiscInputs = () => {
       <DateInput
         validate={required()}
         source="expected_closing_date"
+        label="Target Start Date"
         helperText={false}
         defaultValue={new Date().toISOString().split("T")[0]}
       />
       <SelectInput
         source="stage"
+        label="Lead Stage"
         choices={dealStages.map((stage) => ({
           id: stage.value,
           name: stage.label,

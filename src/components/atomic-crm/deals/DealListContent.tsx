@@ -1,36 +1,126 @@
 import { DragDropContext, type OnDragEndResponder } from "@hello-pangea/dnd";
 import isEqual from "lodash/isEqual";
-import { useDataProvider, useListContext, type DataProvider } from "ra-core";
-import { useEffect, useState } from "react";
+import { useDataProvider, useListContext, useGetList, type DataProvider, useNotify } from "ra-core";
+import { useEffect, useState, useMemo } from "react";
+import { Button } from "@/components/ui/button";
+import { FilePlus, RefreshCw } from "lucide-react";
 
 import { useConfigurationContext } from "../root/ConfigurationContext";
-import type { Deal } from "../types";
+import type { Deal, Contract } from "../types";
 import { DealColumn } from "./DealColumn";
 import type { DealsByStage } from "./stages";
 import { getDealsByStage } from "./stages";
+import { ContractLeadCreateModal } from "./ContractLeadCreateModal";
+import { CreateClientFromLeadModal } from "./CreateClientFromLeadModal";
+import { useContractLeadConverter } from "./useContractLeadConverter";
+import { buildLeadDescription } from "./leadUtils";
 
 export const DealListContent = () => {
   const { dealStages } = useConfigurationContext();
-  const { data: unorderedDeals, isPending, refetch } = useListContext<Deal>();
+  const { data: unorderedDeals, isPending: isDealsPending, refetch: refetchDeals } = useListContext<Deal>();
   const dataProvider = useDataProvider();
+  const notify = useNotify();
+  const { convertLeadToContract } = useContractLeadConverter();
+
+  const [isCreateLeadOpen, setIsCreateLeadOpen] = useState(false);
+  const [clientModalDeal, setClientModalDeal] = useState<Deal | null>(null);
+
+  // Fetch Service Contracts at Proposed, Proposal, or Proposal-Sent status
+  const { data: contracts = [], isPending: isContractsPending, refetch: refetchContracts } = useGetList<Contract>("contracts", {
+    pagination: { page: 1, perPage: 1000 }
+  });
+
+  // Convert proposed/proposal/proposal-sent contracts into Deal representation
+  const contractDeals = useMemo(() => {
+    if (!contracts || contracts.length === 0) return [];
+    
+    return contracts
+      .filter(c => {
+        const s = (c.status || "").toLowerCase();
+        return s === "proposed" || s === "proposal" || s === "proposal-sent";
+      })
+      .map(c => {
+        const statusLower = (c.status || "").toLowerCase();
+        let mappedStage = "opportunity";
+        if (statusLower === "proposal") mappedStage = "proposal";
+        if (statusLower === "proposal-sent") mappedStage = "proposal-sent";
+        if (statusLower === "approved" || statusLower === "won") mappedStage = "won";
+        if (statusLower === "rejected" || statusLower === "lost") mappedStage = "lost";
+
+        const dealObj: Deal = {
+          id: `contract_${c.id}`,
+          name: c.contract_name || c.contract_number || `Service Agreement #${c.id}`,
+          company_id: c.company_id,
+          contact_ids: c.contact_id ? [c.contact_id] : [],
+          category: "Service Agreement",
+          stage: mappedStage,
+          description: buildLeadDescription(undefined, undefined, c.payment_frequency, `Contract #${c.contract_number || c.id}`),
+          amount: Number(c.amount) || 0,
+          created_at: c.start_date || new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          expected_closing_date: c.start_date || new Date().toISOString().split("T")[0],
+          sales_id: (c as any).sales_id || 1,
+          index: 0,
+          payment_frequency: c.payment_frequency,
+          isContractRecord: true,
+          originalContractId: c.id,
+        };
+
+        return dealObj;
+      });
+  }, [contracts]);
+
+  // Combine deals and contract deals safely without duplicates
+  const combinedDeals = useMemo(() => {
+    const deals = unorderedDeals || [];
+    if (!contractDeals || contractDeals.length === 0) return deals;
+
+    // Filter out raw deals that match a generated contract by company & name
+    const contractKeys = new Set(
+      contractDeals.map(cd => `${cd.company_id}_${cd.name.toLowerCase().trim()}`)
+    );
+
+    const uniqueDeals = deals.filter(d => {
+      if (!d.company_id) return true;
+      const key = `${d.company_id}_${d.name.toLowerCase().trim()}`;
+      return !contractKeys.has(key);
+    });
+
+    return [...uniqueDeals, ...contractDeals];
+  }, [unorderedDeals, contractDeals]);
 
   const [dealsByStage, setDealsByStage] = useState<DealsByStage>(
     getDealsByStage([], dealStages),
   );
 
   useEffect(() => {
-    if (unorderedDeals) {
-      const newDealsByStage = getDealsByStage(unorderedDeals, dealStages);
+    if (combinedDeals) {
+      const newDealsByStage = getDealsByStage(combinedDeals, dealStages);
       if (!isEqual(newDealsByStage, dealsByStage)) {
         setDealsByStage(newDealsByStage);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [unorderedDeals]);
+  }, [combinedDeals]);
 
-  if (isPending) return null;
+  // Avoid blank screen while re-fetching
+  if ((isDealsPending && !unorderedDeals) || (isContractsPending && !contracts.length)) return null;
 
-  const onDragEnd: OnDragEndResponder = (result) => {
+  const handleRefetchAll = () => {
+    refetchDeals();
+    refetchContracts();
+  };
+
+  const handleGenerateContract = async (deal: Deal) => {
+    try {
+      await convertLeadToContract(deal);
+      handleRefetchAll();
+    } catch {
+      // Notified inside hook
+    }
+  };
+
+  const onDragEnd: OnDragEndResponder = async (result) => {
     const { destination, source } = result;
 
     if (!destination) {
@@ -51,7 +141,7 @@ export const DealListContent = () => {
       destination.index
     ] ?? {
       stage: destinationStage,
-      index: undefined, // undefined if dropped after the last item
+      index: undefined,
     };
 
     // compute local state change synchronously
@@ -64,24 +154,94 @@ export const DealListContent = () => {
       ),
     );
 
-    // persist the changes
+    // If item is a pulled Contract record, update contract status in contracts table
+    if (sourceDeal.isContractRecord && sourceDeal.originalContractId) {
+      let newContractStatus = "Proposed";
+      if (destinationStage === "proposal") newContractStatus = "Proposal";
+      if (destinationStage === "proposal-sent") newContractStatus = "Proposal-Sent";
+      if (destinationStage === "won") newContractStatus = "Approved";
+      if (destinationStage === "lost") newContractStatus = "Rejected";
+
+      try {
+        await dataProvider.update("contracts", {
+          id: sourceDeal.originalContractId,
+          data: { status: newContractStatus },
+          previousData: { id: sourceDeal.originalContractId }
+        });
+        notify(`Updated Service Agreement status to "${newContractStatus}"`, { type: "info" });
+        handleRefetchAll();
+      } catch (err: any) {
+        notify(`Failed to update agreement status: ${err.message}`, { type: "error" });
+        handleRefetchAll();
+      }
+      return;
+    }
+
+    // Otherwise persist normal deal changes
     updateDealStage(sourceDeal, destinationDeal, dataProvider).then(() => {
-      refetch();
+      handleRefetchAll();
     });
   };
 
   return (
-    <DragDropContext onDragEnd={onDragEnd}>
-      <div className="flex gap-4">
-        {dealStages.map((stage) => (
-          <DealColumn
-            stage={stage.value}
-            deals={dealsByStage[stage.value]}
-            key={stage.value}
-          />
-        ))}
+    <>
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-lg font-bold tracking-tight">Service Contract Leads Staging</h2>
+          <p className="text-xs text-muted-foreground">
+            Stage ad-hoc leads and active Service Agreements (Proposed, Proposal, Proposal Sent).
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1 text-xs"
+            onClick={handleRefetchAll}
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Refresh
+          </Button>
+          <Button
+            size="sm"
+            className="gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs"
+            onClick={() => setIsCreateLeadOpen(true)}
+          >
+            <FilePlus className="h-4 w-4" />
+            New Contract Lead
+          </Button>
+        </div>
       </div>
-    </DragDropContext>
+
+      <DragDropContext onDragEnd={onDragEnd}>
+        <div className="flex gap-4 overflow-x-auto pb-4">
+          {dealStages.map((stage) => (
+            <DealColumn
+              stage={stage.value}
+              deals={dealsByStage[stage.value] || []}
+              key={stage.value}
+              onOpenCreateClient={(deal) => setClientModalDeal(deal)}
+              onGenerateContract={handleGenerateContract}
+            />
+          ))}
+        </div>
+      </DragDropContext>
+
+      {/* Create Ad-Hoc Lead Modal */}
+      <ContractLeadCreateModal
+        isOpen={isCreateLeadOpen}
+        onClose={() => setIsCreateLeadOpen(false)}
+        onSuccess={handleRefetchAll}
+      />
+
+      {/* Create Client from Lead Modal */}
+      <CreateClientFromLeadModal
+        deal={clientModalDeal}
+        isOpen={!!clientModalDeal}
+        onClose={() => setClientModalDeal(null)}
+        onSuccess={handleRefetchAll}
+      />
+    </>
   );
 };
 
@@ -95,23 +255,21 @@ const updateDealStageLocal = (
   dealsByStage: DealsByStage,
 ) => {
   if (source.stage === destination.stage) {
-    // moving deal inside the same column
-    const column = dealsByStage[source.stage];
+    const column = dealsByStage[source.stage] ? [...dealsByStage[source.stage]] : [];
     column.splice(source.index, 1);
-    column.splice(destination.index ?? column.length + 1, 0, sourceDeal);
+    column.splice(destination.index ?? column.length, 0, sourceDeal);
     return {
       ...dealsByStage,
       [destination.stage]: column,
     };
   } else {
-    // moving deal across columns
-    const sourceColumn = dealsByStage[source.stage];
-    const destinationColumn = dealsByStage[destination.stage];
+    const sourceColumn = dealsByStage[source.stage] ? [...dealsByStage[source.stage]] : [];
+    const destinationColumn = dealsByStage[destination.stage] ? [...dealsByStage[destination.stage]] : [];
     sourceColumn.splice(source.index, 1);
     destinationColumn.splice(
-      destination.index ?? destinationColumn.length + 1,
+      destination.index ?? destinationColumn.length,
       0,
-      sourceDeal,
+      { ...sourceDeal, stage: destination.stage },
     );
     return {
       ...dealsByStage,
@@ -125,27 +283,20 @@ const updateDealStage = async (
   source: Deal,
   destination: {
     stage: string;
-    index?: number; // undefined if dropped after the last item
+    index?: number;
   },
   dataProvider: DataProvider,
 ) => {
   if (source.stage === destination.stage) {
-    // moving deal inside the same column
-    // Fetch all the deals in this stage (because the list may be filtered, but we need to update even non-filtered deals)
     const { data: columnDeals } = await dataProvider.getList("deals", {
       sort: { field: "index", order: "ASC" },
       pagination: { page: 1, perPage: 100 },
       filter: { stage: source.stage },
     });
-    const destinationIndex = destination.index ?? columnDeals.length + 1;
+    const destinationIndex = destination.index ?? columnDeals.length;
 
     if (source.index > destinationIndex) {
-      // deal moved up, eg
-      // dest   src
-      //  <------
-      // [4, 7, 23, 5]
       await Promise.all([
-        // for all deals between destinationIndex and source.index, increase the index
         ...columnDeals
           .filter(
             (deal) =>
@@ -158,7 +309,6 @@ const updateDealStage = async (
               previousData: deal,
             }),
           ),
-        // for the deal that was moved, update its index
         dataProvider.update("deals", {
           id: source.id,
           data: { index: destinationIndex },
@@ -166,12 +316,7 @@ const updateDealStage = async (
         }),
       ]);
     } else {
-      // deal moved down, e.g
-      // src   dest
-      //  ------>
-      // [4, 7, 23, 5]
       await Promise.all([
-        // for all deals between source.index and destinationIndex, decrease the index
         ...columnDeals
           .filter(
             (deal) =>
@@ -184,7 +329,6 @@ const updateDealStage = async (
               previousData: deal,
             }),
           ),
-        // for the deal that was moved, update its index
         dataProvider.update("deals", {
           id: source.id,
           data: { index: destinationIndex },
@@ -193,8 +337,6 @@ const updateDealStage = async (
       ]);
     }
   } else {
-    // moving deal across columns
-    // Fetch all the deals in both stages (because the list may be filtered, but we need to update even non-filtered deals)
     const [{ data: sourceDeals }, { data: destinationDeals }] =
       await Promise.all([
         dataProvider.getList("deals", {
@@ -208,10 +350,9 @@ const updateDealStage = async (
           filter: { stage: destination.stage },
         }),
       ]);
-    const destinationIndex = destination.index ?? destinationDeals.length + 1;
+    const destinationIndex = destination.index ?? destinationDeals.length;
 
     await Promise.all([
-      // decrease index on the deals after the source index in the source columns
       ...sourceDeals
         .filter((deal) => deal.index > source.index)
         .map((deal) =>
@@ -221,7 +362,6 @@ const updateDealStage = async (
             previousData: deal,
           }),
         ),
-      // increase index on the deals after the destination index in the destination columns
       ...destinationDeals
         .filter((deal) => deal.index >= destinationIndex)
         .map((deal) =>
@@ -231,7 +371,6 @@ const updateDealStage = async (
             previousData: deal,
           }),
         ),
-      // change the dragged deal to take the destination index and column
       dataProvider.update("deals", {
         id: source.id,
         data: {

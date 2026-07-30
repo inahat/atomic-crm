@@ -1,6 +1,6 @@
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Settings, User } from "lucide-react";
-import { CanAccess, useGetList } from "ra-core";
+import { CanAccess } from "ra-core";
 import { Link, matchPath, useLocation } from "react-router";
 import { RefreshButton } from "@/components/admin/refresh-button";
 import { ThemeModeToggle } from "@/components/admin/theme-mode-toggle";
@@ -11,7 +11,7 @@ import { useConfigurationContext } from "../root/ConfigurationContext";
 import logoNoir from "../../../assets/Noir.png";
 
 const Header = () => {
-  const { darkModeLogo, lightModeLogo, title } = useConfigurationContext();
+  const { title } = useConfigurationContext();
   const location = useLocation();
 
   const orgName = "Technology Simplified";
@@ -28,6 +28,8 @@ const Header = () => {
     currentPath = "/deals";
   } else if (matchPath("/contracts/*", location.pathname)) {
     currentPath = "/contracts";
+  } else if (matchPath("/subscriptions/*", location.pathname)) {
+    currentPath = "/subscriptions";
   } else if (matchPath("/device_events/*", location.pathname)) {
     currentPath = "/device_events";
   } else {
@@ -78,6 +80,11 @@ const Header = () => {
                   isActive={currentPath === "/contracts"}
                 />
                 <NavigationTab
+                  label="Subscriptions"
+                  to="/subscriptions"
+                  isActive={currentPath === "/subscriptions"}
+                />
+                <NavigationTab
                   label="OvrC"
                   to="/device_events/reports"
                   isActive={currentPath === "/device_events"}
@@ -117,45 +124,36 @@ const NavigationTab = ({
 }) => (
   <Link
     to={to}
-    className={`px-6 py-3 text-sm font-medium transition-colors border-b-2 ${isActive
-      ? "text-secondary-foreground border-secondary-foreground"
-      : "text-secondary-foreground/70 border-transparent hover:text-secondary-foreground/80"
-      }`}
+    className={`px-3 py-4 text-sm font-medium border-b-2 hover:border-primary border-transparent text-muted-foreground hover:text-foreground shrink-0 ${
+      isActive ? "border-primary text-foreground" : ""
+    }`}
   >
     {label}
   </Link>
 );
 
 const UsersMenu = () => {
-  const { onClose } = useUserMenu() ?? {};
+  const { onClose } = useUserMenu();
   return (
     <DropdownMenuItem asChild onClick={onClose}>
-      <Link to="/sales" className="flex items-center gap-2">
-        <User /> Users
+      <Link to="/sales" className="flex items-center gap-2 cursor-pointer">
+        <User className="h-4 w-4" />
+        <span>Users</span>
       </Link>
     </DropdownMenuItem>
   );
 };
 
 const ConfigurationMenu = () => {
-  const { onClose } = useUserMenu() ?? {};
+  const { onClose } = useUserMenu();
   return (
-    <>
-      <DropdownMenuItem asChild onClick={onClose}>
-        <Link to="/settings" className="flex items-center gap-2">
-          <Settings />
-          My info
-        </Link>
-      </DropdownMenuItem>
-      <CanAccess resource="crm_settings" action="edit">
-        <DropdownMenuItem asChild onClick={onClose}>
-          <Link to="/organization" className="flex items-center gap-2">
-            <Settings />
-            Organization
-          </Link>
-        </DropdownMenuItem>
-      </CanAccess>
-    </>
+    <DropdownMenuItem asChild onClick={onClose}>
+      <Link to="/settings" className="flex items-center gap-2 cursor-pointer">
+        <Settings className="h-4 w-4" />
+        <span>Settings</span>
+      </Link>
+    </DropdownMenuItem>
   );
 };
+
 export default Header;
