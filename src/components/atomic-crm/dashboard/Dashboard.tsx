@@ -1,4 +1,4 @@
-import { useGetList } from "ra-core";
+import { useGetList, usePermissions } from "ra-core";
 
 import { Contact, ContactNote } from "../types";
 import { ContractExpiringSoon } from "../contracts/ContractExpiringSoon";
@@ -12,6 +12,7 @@ import { TasksList } from "./TasksList";
 import { Welcome } from "./Welcome";
 
 export const Dashboard = () => {
+  const { permissions } = usePermissions();
   const {
     data: dataContact,
     total: totalContact,
@@ -46,12 +47,14 @@ export const Dashboard = () => {
     return <DashboardStepper step={2} contactId={dataContact?.[0]?.id} />;
   }
 
+  const showPipelineChart = permissions === "admin" || permissions === "manager";
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mt-1">
       <div className="md:col-span-9">
         <div className="flex flex-col gap-6">
           {import.meta.env.VITE_IS_DEMO === "true" ? <Welcome /> : null}
-          {totalDeal ? <DealsChart /> : null}
+          {totalDeal && showPipelineChart ? <DealsChart /> : null}
           <SubscriptionRenewalsWidget />
           <MidYearInvoicingReminders />
           <ServiceReminders />

@@ -2,6 +2,7 @@ import {
   EditBase,
   Form,
   useNotify,
+  usePermissions,
   useRecordContext,
   useRedirect,
 } from "ra-core";
@@ -56,6 +57,8 @@ export const DealEdit = ({ open, id }: { open: boolean; id?: string }) => {
 
 function EditHeader() {
   const deal = useRecordContext<Deal>();
+  const { permissions } = usePermissions();
+
   if (!deal) {
     return null;
   }
@@ -70,7 +73,7 @@ function EditHeader() {
           <h2 className="text-2xl font-semibold">Edit {deal.name} deal</h2>
         </div>
         <div className="flex gap-2 pr-12">
-          <DeleteButton />
+          {permissions === "admin" && <DeleteButton />}
           <Button asChild variant="outline" className="h-9">
             <Link to={`/deals/${deal.id}/show`}>Back to deal</Link>
           </Button>

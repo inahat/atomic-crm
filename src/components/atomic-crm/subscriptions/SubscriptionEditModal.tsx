@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useUpdate, useNotify } from "ra-core";
+import { useUpdate, useDelete, usePermissions, useGetIdentity, useNotify } from "ra-core";
 import {
     Dialog,
     DialogContent,
@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Repeat, CheckCircle2 } from "lucide-react";
+import { Repeat, CheckCircle2, Trash } from "lucide-react";
 import { Subscription, SubscriptionType } from "../types";
 import { SUBSCRIPTION_TYPES } from "./SubscriptionCreateModal";
 
@@ -25,7 +25,12 @@ interface SubscriptionEditModalProps {
 
 export const SubscriptionEditModal = ({ subscription, isOpen, onClose, onSuccess }: SubscriptionEditModalProps) => {
     const [updateSubscription] = useUpdate();
+    const [deleteSubscription] = useDelete();
+    const { permissions } = usePermissions();
+    const { identity } = useGetIdentity();
     const notify = useNotify();
+
+    const isAdmin = permissions === "admin" || (identity as any)?.administrator === true;
 
     const [subscriptionType, setSubscriptionType] = useState<SubscriptionType>("Control4 4Sight");
     const [title, setTitle] = useState<string>("");
@@ -35,6 +40,8 @@ export const SubscriptionEditModal = ({ subscription, isOpen, onClose, onSuccess
     const [status, setStatus] = useState<string>("Active");
     const [notes, setNotes] = useState<string>("");
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+    const [isDeleting, setIsDeleting] = useState<boolean>(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState<boolean>(false);
 
     useEffect(() => {
         if (subscription) {
@@ -45,6 +52,7 @@ export const SubscriptionEditModal = ({ subscription, isOpen, onClose, onSuccess
             setRenewalDate(subscription.renewal_date ? subscription.renewal_date.split("T")[0] : "");
             setStatus(subscription.status || "Active");
             setNotes(subscription.notes || "");
+            setShowDeleteConfirm(false);
         }
     }, [subscription]);
 
@@ -55,6 +63,29 @@ export const SubscriptionEditModal = ({ subscription, isOpen, onClose, onSuccess
         setRenewalDate(current.toISOString().split("T")[0]);
         setStatus("Active");
         notify("Advanced renewal date by 1 year", { type: "info" });
+    };
+
+    const handleDelete = async () => {
+        if (!subscription) return;
+        setIsDeleting(true);
+
+        try {
+            await new Promise((resolve, reject) => {
+                deleteSubscription(
+                    "subscriptions",
+                    { id: subscription.id, previousData: subscription },
+                    { onSuccess: resolve, onError: reject }
+                );
+            });
+
+            notify(`Deleted subscription "${subscription.title}"`, { type: "info" });
+            setIsDeleting(false);
+            onClose();
+            if (onSuccess) onSuccess();
+        } catch (err: any) {
+            notify(`Error deleting subscription: ${err.message}`, { type: "error" });
+            setIsDeleting(false);
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -238,17 +269,57 @@ export const SubscriptionEditModal = ({ subscription, isOpen, onClose, onSuccess
                         </div>
                     </div>
 
-                    <DialogFooter className="mt-4 gap-2 sm:gap-0">
-                        <Button type="button" variant="ghost" onClick={onClose}>
-                            Cancel
-                        </Button>
-                        <Button
-                            type="submit"
-                            disabled={isSubmitting}
-                            className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
-                        >
-                            {isSubmitting ? "Saving..." : "Save Changes"}
-                        </Button>
+                    <DialogFooter className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0">
+                        {isAdmin ? (
+                            showDeleteConfirm ? (
+                                <div className="flex items-center gap-1.5">
+                                    <span className="text-xs text-rose-600 dark:text-rose-400 font-semibold">Delete subscription?</span>
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="destructive"
+                                        disabled={isDeleting}
+                                        onClick={handleDelete}
+                                        className="h-8 text-xs gap-1 bg-rose-600 hover:bg-rose-700 text-white font-semibold"
+                                    >
+                                        <Trash className="h-3.5 w-3.5" />
+                                        {isDeleting ? "Deleting..." : "Yes, Delete"}
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => setShowDeleteConfirm(false)}
+                                        className="h-8 text-xs"
+                                    >
+                                        Cancel
+                                    </Button>
+                                </div>
+                            ) : (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => setShowDeleteConfirm(true)}
+                                    className="gap-1.5 text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-rose-900 dark:text-rose-400"
+                                >
+                                    <Trash className="h-4 w-4" />
+                                    Delete
+                                </Button>
+                            )
+                        ) : <div />}
+
+                        <div className="flex items-center gap-2">
+                            <Button type="button" variant="ghost" onClick={onClose}>
+                                Cancel
+                            </Button>
+                            <Button
+                                type="submit"
+                                disabled={isSubmitting}
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
+                            >
+                                {isSubmitting ? "Saving..." : "Save Changes"}
+                            </Button>
+                        </div>
                     </DialogFooter>
                 </form>
             </DialogContent>

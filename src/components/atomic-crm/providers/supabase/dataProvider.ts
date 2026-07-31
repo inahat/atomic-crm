@@ -136,14 +136,27 @@ const dataProviderWithCustomMethods = {
     };
   },
   async salesCreate(body: SalesFormData) {
+    const role = body.role || (body.administrator ? "admin" : "user");
+    const administrator = role === "admin";
     const { data, error } = await supabase.functions.invoke<Sale>("users", {
       method: "POST",
-      body,
+      body: {
+        ...body,
+        role,
+        administrator,
+      },
     });
 
     if (!data || error) {
       console.error("salesCreate.error", error);
       throw new Error("Failed to create account manager");
+    }
+
+    if (data?.id) {
+      await supabase
+        .from("sales")
+        .update({ role, administrator })
+        .eq("id", data.id);
     }
 
     return data;
@@ -152,8 +165,11 @@ const dataProviderWithCustomMethods = {
     id: Identifier,
     data: Partial<Omit<SalesFormData, "password">>,
   ) {
-    const { email, first_name, last_name, administrator, avatar, disabled } =
+    const { email, first_name, last_name, administrator, role, avatar, disabled } =
       data;
+
+    const userRole = role || (administrator ? "admin" : "user");
+    const isAdmin = userRole === "admin";
 
     const { data: sale, error } = await supabase.functions.invoke<Sale>(
       "users",
@@ -164,7 +180,8 @@ const dataProviderWithCustomMethods = {
           email,
           first_name,
           last_name,
-          administrator,
+          administrator: isAdmin,
+          role: userRole,
           disabled,
           avatar,
         },
@@ -190,6 +207,12 @@ const dataProviderWithCustomMethods = {
       });
       throw new Error(`Failed to update account manager: ${error?.message || "Unknown error"}`);
     }
+
+    // Direct database update to ensure role and administrator status persist
+    await supabase
+      .from("sales")
+      .update({ role: userRole, administrator: isAdmin })
+      .eq("id", id);
 
     return data;
   },

@@ -1,13 +1,35 @@
 import { endOfYesterday, startOfMonth, startOfWeek, subMonths } from "date-fns";
-import { CheckSquare, Clock, Tag, TrendingUp, Users } from "lucide-react";
-import { FilterLiveForm, useGetIdentity, useGetList } from "ra-core";
+import { CheckSquare, Clock, Tag, TrendingUp, Users, RotateCcw } from "lucide-react";
+import { FilterLiveForm, useGetIdentity, useGetList, useListContext } from "ra-core";
 import { ToggleFilterButton } from "@/components/admin/toggle-filter-button";
 import { SearchInput } from "@/components/admin/search-input";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 import { FilterCategory } from "../filters/FilterCategory";
 import { Status } from "../misc/Status";
 import { useConfigurationContext } from "../root/ConfigurationContext";
+
+const ClearFiltersButton = () => {
+  const { filterValues, setFilters } = useListContext();
+  const activeCount = Object.keys(filterValues || {}).filter(
+    (k) => filterValues[k] !== undefined && filterValues[k] !== ""
+  ).length;
+
+  if (activeCount === 0) return null;
+
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      className="w-full text-xs gap-1.5 border-rose-200 text-rose-700 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900 cursor-pointer font-semibold"
+      onClick={() => setFilters({})}
+    >
+      <RotateCcw className="h-3.5 w-3.5" />
+      Clear All Filters ({activeCount})
+    </Button>
+  );
+};
 
 export const ContactListFilter = () => {
   const { noteStatuses } = useConfigurationContext();
@@ -23,53 +45,28 @@ export const ContactListFilter = () => {
         <SearchInput source="q" placeholder="Search name, company..." />
       </FilterLiveForm>
 
+      <ClearFiltersButton />
+
       <FilterCategory label="Last activity" icon={<Clock />}>
         <ToggleFilterButton
           className="w-full justify-between"
-          label="Today"
+          label="Active Recently (30d)"
           value={{
-            "last_seen@gte": endOfYesterday().toISOString(),
+            "last_seen@gte": subMonths(new Date(), 1).toISOString(),
             "last_seen@lte": undefined,
           }}
         />
         <ToggleFilterButton
           className="w-full justify-between"
-          label="This week"
-          value={{
-            "last_seen@gte": startOfWeek(new Date()).toISOString(),
-            "last_seen@lte": undefined,
-          }}
-        />
-        <ToggleFilterButton
-          className="w-full justify-between"
-          label="Before this week"
+          label="Inactive (> 30d)"
           value={{
             "last_seen@gte": undefined,
-            "last_seen@lte": startOfWeek(new Date()).toISOString(),
-          }}
-        />
-        <ToggleFilterButton
-          className="w-full justify-between"
-          label="Before this month"
-          value={{
-            "last_seen@gte": undefined,
-            "last_seen@lte": startOfMonth(new Date()).toISOString(),
-          }}
-        />
-        <ToggleFilterButton
-          className="w-full justify-between"
-          label="Before last month"
-          value={{
-            "last_seen@gte": undefined,
-            "last_seen@lte": subMonths(
-              startOfMonth(new Date()),
-              1,
-            ).toISOString(),
+            "last_seen@lte": subMonths(new Date(), 1).toISOString(),
           }}
         />
       </FilterCategory>
 
-      <FilterCategory label="Status" icon={<TrendingUp />}>
+      <FilterCategory label="Contact Role / Type" icon={<TrendingUp />}>
         {noteStatuses.map((status) => (
           <ToggleFilterButton
             key={status.value}
@@ -86,24 +83,26 @@ export const ContactListFilter = () => {
 
       <FilterCategory label="Tags" icon={<Tag />}>
         {data &&
-          data.map((record) => (
-            <ToggleFilterButton
-              className="w-full justify-between"
-              key={record.id}
-              label={
-                <Badge
-                  variant="secondary"
-                  className="text-black text-xs font-normal cursor-pointer"
-                  style={{
-                    backgroundColor: record?.color,
-                  }}
-                >
-                  {record?.name}
-                </Badge>
-              }
-              value={{ "tags@cs": `{${record.id}}` }}
-            />
-          ))}
+          data
+            .filter((record) => !record?.name?.toLowerCase().includes("imported-iphone"))
+            .map((record) => (
+              <ToggleFilterButton
+                className="w-full justify-between"
+                key={record.id}
+                label={
+                  <Badge
+                    variant="secondary"
+                    className="text-black text-xs font-normal cursor-pointer"
+                    style={{
+                      backgroundColor: record?.color,
+                    }}
+                  >
+                    {record?.name}
+                  </Badge>
+                }
+                value={{ "tags@cs": `{${record.id}}` }}
+              />
+            ))}
       </FilterCategory>
 
       <FilterCategory icon={<CheckSquare />} label="Tasks">

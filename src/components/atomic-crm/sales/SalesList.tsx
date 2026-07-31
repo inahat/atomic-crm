@@ -20,16 +20,30 @@ const filters = [<SearchInput source="q" alwaysOn />];
 const OptionsField = (_props: { label?: string | boolean }) => {
   const record = useRecordContext();
   if (!record) return null;
+  const role =
+    record.administrator === true
+      ? "admin"
+      : record.role === "manager"
+      ? "manager"
+      : record.role === "admin"
+      ? "admin"
+      : "user";
+  const roleLabels: Record<string, string> = {
+    admin: "Admin",
+    manager: "Manager",
+    user: "User",
+  };
+  const badgeColor: Record<string, string> = {
+    admin: "border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400",
+    manager: "border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-400",
+    user: "border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400",
+  };
+
   return (
     <div className="flex flex-row gap-1">
-      {record.administrator && (
-        <Badge
-          variant="outline"
-          className="border-blue-300 dark:border-blue-700"
-        >
-          Admin
-        </Badge>
-      )}
+      <Badge variant="outline" className={badgeColor[role] || badgeColor.user}>
+        {roleLabels[role] || "User"}
+      </Badge>
       {record.disabled && (
         <Badge
           variant="outline"

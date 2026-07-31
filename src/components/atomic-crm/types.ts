@@ -16,6 +16,8 @@ export type SignUpData = {
   last_name: string;
 };
 
+export type UserRole = "admin" | "manager" | "user";
+
 export type SalesFormData = {
   avatar: string;
   email: string;
@@ -23,6 +25,7 @@ export type SalesFormData = {
   first_name: string;
   last_name: string;
   administrator: boolean;
+  role?: UserRole;
   disabled: boolean;
 };
 
@@ -30,6 +33,7 @@ export type Sale = {
   first_name: string;
   last_name: string;
   administrator: boolean;
+  role?: UserRole;
   avatar?: RAFile;
   disabled?: boolean;
   user_id: string;

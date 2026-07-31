@@ -1,4 +1,5 @@
 
+import { usePermissions } from "ra-core";
 import {
     DateField,
     NumberField,
@@ -11,6 +12,9 @@ import {
 import { ContractStatus } from "./ContractStatus";
 
 export const ContractShow = () => {
+    const { permissions } = usePermissions();
+    const isUser = permissions === "user";
+
     return (
         <Show>
             <SimpleShowLayout>
@@ -42,10 +46,12 @@ export const ContractShow = () => {
                 </div>
 
                 <div className="flex gap-8">
-                    <NumberField
-                        source="amount"
-                        options={{ style: 'currency', currency: 'GBP' }}
-                    />
+                    {!isUser && (
+                        <NumberField
+                            source="amount"
+                            options={{ style: 'currency', currency: 'GBP' }}
+                        />
+                    )}
                     <NumberField source="included_hours" />
                     <TextField source="payment_frequency" />
                 </div>

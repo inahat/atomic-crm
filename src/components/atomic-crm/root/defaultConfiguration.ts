@@ -6,17 +6,11 @@ export const defaultLightModeLogo = "./logos/logo_atomic_crm_light.svg";
 export const defaultTitle = "ih - Support";
 
 export const defaultCompanySectors = [
-  "Communication Services",
-  "Consumer Discretionary",
-  "Consumer Staples",
-  "Energy",
-  "Financials",
-  "Health Care",
-  "Industrials",
-  "Information Technology",
-  "Materials",
-  "Real Estate",
-  "Utilities",
+  "Residential High-End",
+  "Commercial / Office",
+  "Property Managing Agent",
+  "Architect / Developer",
+  "VIP Account",
 ];
 
 export const defaultDealStages = [
@@ -35,10 +29,11 @@ export const defaultDealCategories = [
 ];
 
 export const defaultNoteStatuses = [
-  { value: "cold", label: "Cold", color: "#7dbde8" },
-  { value: "warm", label: "Warm", color: "#e8cb7d" },
-  { value: "hot", label: "Hot", color: "#e88b7d" },
-  { value: "in-contract", label: "In Contract", color: "#a4e87d" },
+  { value: "service-client", label: "Service Client", color: "#6366f1" },
+  { value: "homeowner", label: "Homeowner / Resident", color: "#10b981" },
+  { value: "house-manager", label: "Property / House Manager", color: "#f59e0b" },
+  { value: "managing-agent", label: "Managing Agent", color: "#8b5cf6" },
+  { value: "contractor", label: "Architect / Builder", color: "#ec4899" },
 ];
 
 export const defaultTaskTypes = [

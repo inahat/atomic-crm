@@ -294,8 +294,12 @@ export const dataProvider = withLifecycleCallbacks(
       resource: "sales",
       beforeCreate: async (params) => {
         const { data } = params;
-        // If administrator role is not set, we simply set it to false
-        if (data.administrator == null) {
+        if (data.role) {
+          data.administrator = data.role === "admin";
+        } else if (data.administrator != null) {
+          data.role = data.administrator ? "admin" : "user";
+        } else {
+          data.role = "user";
           data.administrator = false;
         }
         return params;

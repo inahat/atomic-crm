@@ -110,8 +110,15 @@ export const authProvider: AuthProvider = {
     const sale = await getSaleFromCache();
     if (sale == null) return false;
 
-    // Compute access rights from the sale role
-    const role = sale.administrator ? "admin" : "user";
+    // Compute access rights from the sale role: administrator flag takes priority
+    const role =
+      sale.administrator === true
+        ? "admin"
+        : sale.role === "manager"
+        ? "manager"
+        : sale.role === "admin"
+        ? "admin"
+        : "user";
     return canAccess(role, { ...params, currentUserId: sale.id });
   },
   getPermissions: async () => {
@@ -121,7 +128,13 @@ export const authProvider: AuthProvider = {
     const sale = await getSaleFromCache();
     if (sale == null) return null;
 
-    return sale.administrator ? "admin" : "user";
+    return sale.administrator === true
+      ? "admin"
+      : sale.role === "manager"
+      ? "manager"
+      : sale.role === "admin"
+      ? "admin"
+      : "user";
   },
   getAuthorizationDetails(authorizationId: string) {
     return supabase.auth.oauth.getAuthorizationDetails(authorizationId);
@@ -152,11 +165,25 @@ const getSaleFromCache = async () => {
     return cachedSale;
   }
 
-  const { data: dataSale, error: errorSale } = await supabase
+  let { data: dataSale, error: errorSale } = await supabase
     .from("sales")
-    .select("id, first_name, last_name, avatar, administrator")
+    .select("id, first_name, last_name, avatar, administrator, role")
     .match({ user_id: userId })
     .single();
+
+  if (errorSale) {
+    // Fallback if 'role' column does not exist on remote DB yet
+    const fallback = await supabase
+      .from("sales")
+      .select("id, first_name, last_name, avatar, administrator")
+      .match({ user_id: userId })
+      .single();
+
+    if (fallback.data) {
+      dataSale = fallback.data;
+      errorSale = null;
+    }
+  }
 
   // Shouldn't happen either as all users are sales but just in case
   if (dataSale == null || errorSale) {

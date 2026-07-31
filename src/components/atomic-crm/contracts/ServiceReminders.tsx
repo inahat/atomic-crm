@@ -203,9 +203,9 @@ export const ServiceReminders = () => {
                                                 <div className="text-xs text-muted-foreground">{reminder.contract_number}</div>
                                             </TableCell>
                                             <TableCell>
-                                                <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ring-1 ring-inset ${reminder.service_type === 'mid-year'
-                                                    ? 'bg-orange-50 text-orange-700 ring-orange-600/20'
-                                                    : 'bg-red-50 text-red-700 ring-red-600/20'
+                                                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset ${reminder.service_type === 'mid-year'
+                                                    ? 'bg-sky-50 text-sky-700 ring-sky-600/30 dark:bg-sky-950/60 dark:text-sky-300 dark:ring-sky-700'
+                                                    : 'bg-rose-50 text-rose-700 ring-rose-600/30 dark:bg-rose-950/60 dark:text-rose-300 dark:ring-rose-700'
                                                     }`}>
                                                     {reminder.service_type === 'mid-year' ? 'Mid-Year' : 'End-of-Year'}
                                                 </span>

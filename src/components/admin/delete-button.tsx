@@ -11,6 +11,7 @@ import {
   useResourceContext,
   useTranslate,
   useCanAccess,
+  usePermissions,
 } from "ra-core";
 
 export type DeleteButtonProps = {
@@ -103,6 +104,26 @@ export const DeleteButton = (props: DeleteButtonProps) => {
     },
     userText: labelProp,
   });
+
+  const { permissions } = usePermissions();
+  const targetResource = props.resource || resource;
+  const restrictedResources = [
+    "deals",
+    "contracts",
+    "contacts",
+    "companies",
+    "subscriptions",
+    "contactNotes",
+    "dealNotes",
+  ];
+
+  if (
+    permissions !== "admin" &&
+    targetResource &&
+    restrictedResources.includes(targetResource)
+  ) {
+    return null;
+  }
 
   if (isAccessPending || !canAccess) {
     return null;

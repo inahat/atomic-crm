@@ -69,13 +69,12 @@ export const RenewSubscriptionModal = ({
             if (invoiceRequired) {
                 let targetContactId = subscription.contact_id || null;
 
-                // If no contact_id on subscription, try fetching first contact associated with the company
+                // 2a. If no contact_id on subscription, try fetching contact for the company (using ra-data-postgrest company_id@eq filter)
                 if (!targetContactId && subscription.company_id) {
                     try {
                         const contactsRes = await dataProvider.getList("contacts", {
-                            filter: { company_id: subscription.company_id },
-                            pagination: { page: 1, perPage: 1 },
-                            sort: { field: "id", order: "ASC" }
+                            filter: { "company_id@eq": subscription.company_id },
+                            pagination: { page: 1, perPage: 1 }
                         });
                         if (contactsRes.data && contactsRes.data.length > 0) {
                             targetContactId = contactsRes.data[0].id;
@@ -83,6 +82,29 @@ export const RenewSubscriptionModal = ({
                     } catch (e) {
                         // ignore if lookup fails
                     }
+                }
+
+                // 2b. Fallback to any contact in the database if no company contact was found
+                if (!targetContactId) {
+                    try {
+                        const anyContactRes = await dataProvider.getList("contacts", {
+                            filter: {},
+                            pagination: { page: 1, perPage: 1 }
+                        });
+                        if (anyContactRes.data && anyContactRes.data.length > 0) {
+                            targetContactId = anyContactRes.data[0].id;
+                        }
+                    } catch (e) {
+                        // ignore if lookup fails
+                    }
+                }
+
+                if (!targetContactId) {
+                    notify("Cannot create invoice task: No contact available in CRM to attach task to.", { type: "warning" });
+                    setIsSubmitting(false);
+                    onClose();
+                    if (onSuccess) onSuccess();
+                    return;
                 }
 
                 const taskText = `Send renewal invoice for subscription "${subscription.title}"${companyName ? ` (${companyName})` : ''} - £${subscription.amount || 0}`;

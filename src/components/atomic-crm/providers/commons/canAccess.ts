@@ -26,33 +26,32 @@ export const canAccess = <
     return true;
   }
 
-  // Non admins can't access the sales resource
-  if (params.resource === "sales") {
+  // Non-admins cannot access or modify sales resource or crm_settings
+  if (params.resource === "sales" || params.resource === "crm_settings") {
     return false;
   }
 
-  // Only admins can delete contacts, clients (companies), notes, and service contracts
-  if (
-    params.action === "delete" &&
-    [
-      "contacts",
-      "companies",
-      "contactNotes",
-      "dealNotes",
-      "contracts",
-    ].includes(params.resource)
-  ) {
+  // Non-admins (managers and users) cannot delete anything
+  if (params.action === "delete") {
     return false;
   }
 
-  // Non-admins cannot delete any sales (user) accounts
-  if (params.resource === "sales" && params.action === "delete") {
-    return false;
-  }
-
-  // Non-admins cannot access or modify crm_settings (Organization details)
-  if (params.resource === "crm_settings" && role !== "admin") {
-    return false;
+  // Standard User specific restrictions
+  if (role === "user") {
+    // Standard users cannot edit or create service contracts
+    if (
+      params.resource === "contracts" &&
+      (params.action === "edit" || params.action === "create")
+    ) {
+      return false;
+    }
+    // Standard users cannot access contract analytics/reports or dashboard pipeline chart
+    if (
+      params.resource === "contracts_analytics" ||
+      params.resource === "dashboard_pipeline_chart"
+    ) {
+      return false;
+    }
   }
 
   return true;

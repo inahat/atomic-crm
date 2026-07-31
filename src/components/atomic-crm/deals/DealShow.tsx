@@ -5,6 +5,7 @@ import {
   ShowBase,
   useDataProvider,
   useNotify,
+  usePermissions,
   useRecordContext,
   useRedirect,
   useRefresh,
@@ -49,6 +50,7 @@ export const DealShow = ({ open, id }: { open: boolean; id?: string }) => {
 
 const DealShowContent = () => {
   const { dealStages } = useConfigurationContext();
+  const { permissions } = usePermissions();
   const record = useRecordContext<Deal>();
   if (!record) return null;
 
@@ -72,7 +74,7 @@ const DealShowContent = () => {
               {record.archived_at ? (
                 <>
                   <UnarchiveButton record={record} />
-                  <DeleteButton />
+                  {permissions === "admin" && <DeleteButton />}
                 </>
               ) : (
                 <>

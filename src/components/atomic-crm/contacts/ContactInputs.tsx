@@ -70,10 +70,17 @@ const ContactIdentityInputs = () => {
 };
 
 const ContactPositionInputs = () => {
+  const { noteStatuses } = useConfigurationContext();
   return (
     <div className="flex flex-col gap-4">
-      <h6 className="text-lg font-semibold">Position</h6>
-      <TextInput source="title" helperText={false} />
+      <h6 className="text-lg font-semibold">Position &amp; Role</h6>
+      <SelectInput
+        source="status"
+        label="Contact Role / Type"
+        choices={noteStatuses.map((s) => ({ id: s.value, name: s.label }))}
+        helperText={false}
+      />
+      <TextInput source="title" label="Job Title" helperText={false} />
       <ReferenceInput source="company_id" reference="companies" perPage={10}>
         <AutocompleteCompanyInput label="Primary Client" />
       </ReferenceInput>

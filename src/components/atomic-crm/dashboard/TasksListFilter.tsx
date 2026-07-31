@@ -4,6 +4,7 @@ import {
   useGetIdentity,
   useGetList,
   useList,
+  usePermissions,
 } from "ra-core";
 
 import { TasksIterator } from "../tasks/TasksIterator";
@@ -11,11 +12,21 @@ import { TasksIterator } from "../tasks/TasksIterator";
 export const TasksListFilter = ({
   title,
   filter,
+  selectedSalesId,
 }: {
   title: string;
   filter: any;
+  selectedSalesId?: number | string | null;
 }) => {
   const { identity } = useGetIdentity();
+  const { permissions } = usePermissions();
+
+  const filterWithSalesId = { ...filter };
+  if (permissions === "user") {
+    filterWithSalesId.sales_id = identity?.id;
+  } else if (selectedSalesId != null) {
+    filterWithSalesId.sales_id = selectedSalesId;
+  }
 
   const {
     data: tasks,
@@ -26,10 +37,7 @@ export const TasksListFilter = ({
     {
       pagination: { page: 1, perPage: 100 },
       sort: { field: "due_date", order: "ASC" },
-      filter: {
-        ...filter,
-        // sales_id: identity?.id, // Column does not exist in production DB yet
-      },
+      filter: filterWithSalesId,
     },
     { enabled: !!identity },
   );

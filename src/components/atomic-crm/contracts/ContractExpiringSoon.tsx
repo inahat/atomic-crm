@@ -8,7 +8,7 @@ import { CalendarClock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const ContractExpiringSoon = () => {
-    const [days, setDays] = useState<30 | 60>(30);
+    const [days, setDays] = useState<30 | 60>(60);
 
     // Calculate target date based on selected days
     const targetDate = new Date();
@@ -17,18 +17,17 @@ export const ContractExpiringSoon = () => {
     const todayStr = new Date().toISOString().split('T')[0];
 
     const { data, isLoading } = useGetList("contracts", {
-        pagination: { page: 1, perPage: 5 },
+        pagination: { page: 1, perPage: 100 },
         sort: { field: "expiry_date", order: "ASC" },
         filter: {
             expiry_date_lte: targetDateStr,
             expiry_date_gte: todayStr, // Only future expirations (or today)
-            status: ["Open-Unbilled", "Open-Billed", "Approved"]
+            "status@neq": "Rejected"
         },
     });
 
     if (isLoading) return <Loading />;
 
-    // Use mock data if API returns empty (for visual testing) or show empty state
     const contracts = data && data.length > 0 ? data : [];
 
     return (
@@ -36,7 +35,7 @@ export const ContractExpiringSoon = () => {
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="flex items-center gap-2 text-sm font-medium">
                     <CalendarClock className="h-4 w-4" />
-                    Expiring Soon
+                    Expiring Soon ({contracts.length})
                 </CardTitle>
                 <div className="flex gap-1">
                     <Button
@@ -61,7 +60,7 @@ export const ContractExpiringSoon = () => {
                 {contracts.length === 0 ? (
                     <p className="text-sm text-muted-foreground pt-4">No contracts expiring in the next {days} days.</p>
                 ) : (
-                    <div className="space-y-4 pt-4">
+                    <div className="space-y-3 pt-3 max-h-[380px] overflow-y-auto pr-1">
                         {contracts.map((contract: any) => (
                             <div
                                 key={contract.id}

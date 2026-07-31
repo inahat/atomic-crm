@@ -13,10 +13,15 @@ async function updateSaleDisabled(user_id: string, disabled: boolean) {
 async function updateSaleAdministrator(
   user_id: string,
   administrator: boolean,
+  role?: string,
 ) {
+  const updatePayload: Record<string, any> = { administrator };
+  if (role) {
+    updatePayload.role = role;
+  }
   const { data: sales, error: salesError } = await supabaseAdmin
     .from("sales")
-    .update({ administrator })
+    .update(updatePayload)
     .eq("user_id", user_id)
     .select("*");
 
@@ -42,7 +47,7 @@ async function updateSaleAvatar(user_id: string, avatar: string) {
 }
 
 async function inviteUser(req: Request, currentUserSale: any) {
-  const { email, password, first_name, last_name, disabled, administrator } =
+  const { email, password, first_name, last_name, disabled, administrator, role } =
     await req.json();
 
   if (!currentUserSale.administrator) {
@@ -72,7 +77,7 @@ async function inviteUser(req: Request, currentUserSale: any) {
 
   try {
     await updateSaleDisabled(data.user.id, disabled);
-    const sale = await updateSaleAdministrator(data.user.id, administrator);
+    const sale = await updateSaleAdministrator(data.user.id, administrator, role);
 
     return new Response(
       JSON.stringify({
@@ -96,6 +101,7 @@ async function patchUser(req: Request, currentUserSale: any) {
     last_name,
     avatar,
     administrator,
+    role,
     disabled,
   } = await req.json();
   const { data: sale } = await supabaseAdmin
@@ -162,7 +168,7 @@ async function patchUser(req: Request, currentUserSale: any) {
 
   try {
     await updateSaleDisabled(data.user.id, disabled);
-    const sale = await updateSaleAdministrator(data.user.id, administrator);
+    const sale = await updateSaleAdministrator(data.user.id, administrator, role);
     return new Response(
       JSON.stringify({
         data: sale,

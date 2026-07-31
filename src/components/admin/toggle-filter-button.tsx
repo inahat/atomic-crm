@@ -44,14 +44,14 @@ export const ToggleFilterButton = ({
       variant={isSelected ? "secondary" : "ghost"}
       onClick={handleClick}
       className={cn(
-        "cursor-pointer",
-        "flex flex-row items-center justify-between gap-2 px-2.5 w-full",
+        "cursor-pointer transition-all duration-150 flex flex-row items-center justify-between gap-2 px-2.5 w-full text-xs font-medium",
+        isSelected && "bg-indigo-100 text-indigo-900 border border-indigo-300 dark:bg-indigo-950/90 dark:text-indigo-200 dark:border-indigo-700 font-bold shadow-2xs",
         className,
       )}
       size={size}
     >
       {typeof label === "string" ? translate(label, { _: label }) : label}
-      {isSelected && <CircleX className="opacity-50" />}
+      {isSelected && <CircleX className="h-3.5 w-3.5 opacity-90 text-indigo-700 dark:text-indigo-300 shrink-0" />}
     </Button>
   );
 };

@@ -7,6 +7,7 @@ import {
   useDataProvider,
   useGetIdentity,
   useNotify,
+  usePermissions,
   useRecordContext,
   useUpdate,
 } from "ra-core";
@@ -43,6 +44,7 @@ export const AddTask = ({
   display?: "chip" | "icon";
 }) => {
   const { identity } = useGetIdentity();
+  const { permissions } = usePermissions();
   const dataProvider = useDataProvider();
   const [update] = useUpdate();
   const notify = useNotify();
@@ -178,6 +180,19 @@ export const AddTask = ({
                     helperText={false}
                   />
                 </div>
+
+                {(permissions === "admin" || permissions === "manager") && (
+                  <ReferenceInput source="sales_id" reference="sales">
+                    <SelectInput
+                      label="Assign to Staff Member"
+                      optionText={(record) =>
+                        `${record.first_name} ${record.last_name}`
+                      }
+                      helperText={false}
+                      validate={required()}
+                    />
+                  </ReferenceInput>
+                )}
               </div>
               <DialogFooter className="w-full justify-end">
                 <SaveButton />
