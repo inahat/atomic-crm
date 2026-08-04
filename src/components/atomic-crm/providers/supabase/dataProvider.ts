@@ -148,8 +148,19 @@ const dataProviderWithCustomMethods = {
     });
 
     if (!data || error) {
+      if (error?.context && typeof error.context.json === "function") {
+        try {
+          const errorBody = await error.context.json();
+          console.error("salesCreate Edge Function Error Body:", errorBody);
+        } catch (e) {
+          console.error("Could not parse Edge Function error JSON", e);
+        }
+      }
+
       console.error("salesCreate.error", error);
-      throw new Error("Failed to create account manager");
+      throw new Error(
+        `Failed to create account manager: ${error?.message || "Unknown error"}`,
+      );
     }
 
     if (data?.id) {

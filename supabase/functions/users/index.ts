@@ -3,22 +3,21 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 import { corsHeaders, createErrorResponse } from "../_shared/utils.ts";
 
-async function updateSaleDisabled(user_id: string, disabled: boolean) {
-  return await supabaseAdmin
-    .from("sales")
-    .update({ disabled: disabled ?? false })
-    .eq("user_id", user_id);
-}
-
-async function updateSaleAdministrator(
+async function updateSaleRecord(
   user_id: string,
+  disabled: boolean,
   administrator: boolean,
   role?: string,
 ) {
-  const updatePayload: Record<string, any> = { administrator };
-  if (role) {
-    updatePayload.role = role;
-  }
+  const userRole = role || (administrator ? "admin" : "user");
+  const isAdmin = userRole === "admin";
+
+  const updatePayload: Record<string, any> = {
+    disabled: disabled ?? false,
+    administrator: isAdmin,
+    role: userRole,
+  };
+
   const { data: sales, error: salesError } = await supabaseAdmin
     .from("sales")
     .update(updatePayload)
@@ -26,10 +25,34 @@ async function updateSaleAdministrator(
     .select("*");
 
   if (!sales?.length || salesError) {
-    console.error("Error updating user:", salesError);
-    throw salesError ?? new Error("Failed to update sale");
+    console.error("Error updating sales record:", salesError);
+
+    // Fallback: check if sales record exists
+    const { data: existingSale } = await supabaseAdmin
+      .from("sales")
+      .select("*")
+      .eq("user_id", user_id)
+      .maybeSingle();
+
+    if (!existingSale) {
+      const { data: newSale, error: insertError } = await supabaseAdmin
+        .from("sales")
+        .insert({
+          user_id,
+          administrator: isAdmin,
+          disabled: disabled ?? false,
+          role: userRole,
+        })
+        .select("*")
+        .single();
+      if (insertError) throw insertError;
+      return newSale;
+    }
+
+    throw salesError ?? new Error("Failed to update sale record");
   }
-  return sales.at(0);
+
+  return sales[0];
 }
 
 async function updateSaleAvatar(user_id: string, avatar: string) {
@@ -40,10 +63,10 @@ async function updateSaleAvatar(user_id: string, avatar: string) {
     .select("*");
 
   if (!sales?.length || salesError) {
-    console.error("Error updating user:", salesError);
-    throw salesError ?? new Error("Failed to update sale");
+    console.error("Error updating user avatar:", salesError);
+    throw salesError ?? new Error("Failed to update sale avatar");
   }
-  return sales.at(0);
+  return sales[0];
 }
 
 async function inviteUser(req: Request, currentUserSale: any) {
@@ -54,30 +77,60 @@ async function inviteUser(req: Request, currentUserSale: any) {
     return createErrorResponse(401, "Not Authorized");
   }
 
-  const { data, error: userError } = await supabaseAdmin.auth.admin.createUser({
-    email,
-    password,
-    user_metadata: { first_name, last_name },
-  });
+  let createdUser: any = null;
 
-  if (!data?.user || userError) {
-    console.error(`Error inviting user: user_error=${userError}`);
-    return createErrorResponse(500, userError?.message || "Internal Server Error");
-  }
+  if (password) {
+    const { data, error: userError } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: { first_name, last_name },
+    });
 
-  const { error: emailError } =
-    await supabaseAdmin.auth.admin.inviteUserByEmail(email);
+    if (!data?.user || userError) {
+      console.error(`Error creating user:`, userError);
+      return createErrorResponse(400, userError?.message || "Failed to create user");
+    }
+    createdUser = data.user;
+  } else {
+    // Attempt invite email first
+    const { data: inviteData, error: inviteError } =
+      await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+        data: { first_name, last_name },
+      });
 
-  if (emailError) {
-    console.error(`Error inviting user, email_error=${emailError}`);
-    // Rollback user creation to prevent duplicate/orphaned records
-    await supabaseAdmin.auth.admin.deleteUser(data.user.id);
-    return createErrorResponse(429, `Failed to send invitation email: ${emailError.message}`);
+    if (inviteError || !inviteData?.user) {
+      console.warn(
+        `inviteUserByEmail failed: ${inviteError?.message || "No user returned"}. Falling back to createUser.`,
+      );
+      // Fallback to createUser if email provider/SMTP fails
+      const { data: createData, error: createError } =
+        await supabaseAdmin.auth.admin.createUser({
+          email,
+          email_confirm: true,
+          user_metadata: { first_name, last_name },
+        });
+
+      if (!createData?.user || createError) {
+        console.error(`Error creating user fallback:`, createError);
+        return createErrorResponse(
+          400,
+          createError?.message || inviteError?.message || "Failed to create user",
+        );
+      }
+      createdUser = createData.user;
+    } else {
+      createdUser = inviteData.user;
+    }
   }
 
   try {
-    await updateSaleDisabled(data.user.id, disabled);
-    const sale = await updateSaleAdministrator(data.user.id, administrator, role);
+    const sale = await updateSaleRecord(
+      createdUser.id,
+      disabled,
+      administrator,
+      role,
+    );
 
     return new Response(
       JSON.stringify({
@@ -87,9 +140,9 @@ async function inviteUser(req: Request, currentUserSale: any) {
         headers: { "Content-Type": "application/json", ...corsHeaders },
       },
     );
-  } catch (e) {
+  } catch (e: any) {
     console.error("Error patching sale:", e);
-    return createErrorResponse(500, "Internal Server Error");
+    return createErrorResponse(500, e?.message || "Internal Server Error");
   }
 }
 
@@ -104,6 +157,7 @@ async function patchUser(req: Request, currentUserSale: any) {
     role,
     disabled,
   } = await req.json();
+
   const { data: sale } = await supabaseAdmin
     .from("sales")
     .select("*")
@@ -128,7 +182,7 @@ async function patchUser(req: Request, currentUserSale: any) {
 
   if (!data?.user || userError) {
     console.error("Error patching user:", userError);
-    return createErrorResponse(500, "Internal Server Error");
+    return createErrorResponse(500, userError?.message || "Internal Server Error");
   }
 
   if (avatar) {
@@ -167,11 +221,15 @@ async function patchUser(req: Request, currentUserSale: any) {
   }
 
   try {
-    await updateSaleDisabled(data.user.id, disabled);
-    const sale = await updateSaleAdministrator(data.user.id, administrator, role);
+    const updatedSale = await updateSaleRecord(
+      data.user.id,
+      disabled,
+      administrator,
+      role,
+    );
     return new Response(
       JSON.stringify({
-        data: sale,
+        data: updatedSale,
       }),
       {
         headers: {
@@ -180,9 +238,9 @@ async function patchUser(req: Request, currentUserSale: any) {
         },
       },
     );
-  } catch (e) {
+  } catch (e: any) {
     console.error("Error patching sale:", e);
-    return createErrorResponse(500, "Internal Server Error");
+    return createErrorResponse(500, e?.message || "Internal Server Error");
   }
 }
 
@@ -202,8 +260,6 @@ Deno.serve(async (req: Request) => {
 
   const apiKey = Deno.env.get("ANON_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 
-
-
   const localClient = createClient(
     Deno.env.get("SUPABASE_URL") ?? Deno.env.get("API_URL") ?? "",
     apiKey,
@@ -215,6 +271,7 @@ Deno.serve(async (req: Request) => {
   if (!data?.user) {
     return createErrorResponse(401, `Auth User Failed: ${JSON.stringify(authError)}`);
   }
+
   const { data: saleData, error: saleError } = await supabaseAdmin
     .from("sales")
     .select("*")
@@ -223,10 +280,14 @@ Deno.serve(async (req: Request) => {
 
   if (!saleData || saleError) {
     console.error("Sale lookup error:", saleError);
-    return createErrorResponse(401, `Sales Lookup Failed: ${saleError?.message || "No sale record found for user"} (Ref: ${data.user.id})`);
+    return createErrorResponse(
+      401,
+      `Sales Lookup Failed: ${saleError?.message || "No sale record found for user"} (Ref: ${data.user.id})`,
+    );
   }
 
   const currentUserSale = { data: saleData };
+
   if (req.method === "POST") {
     return inviteUser(req, currentUserSale.data);
   }
